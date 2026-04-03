@@ -3,15 +3,13 @@ package com.qidai.morefunctionalswordmod.gui;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Drawable;
 import net.minecraft.client.gui.Element;
-import net.minecraft.client.gui.ParentElement;
 import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.client.util.math.MatrixStack;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
-public class ScrollablePanel implements Drawable, ParentElement {
+public class ScrollablePanel implements Drawable, Element {
     private final int x, y, width, height;
     private final List<ClickableWidget> children = new ArrayList<>();
     private int scrollY = 0;
@@ -30,7 +28,6 @@ public class ScrollablePanel implements Drawable, ParentElement {
         contentHeight = Math.max(contentHeight, child.getY() + child.getHeight());
     }
 
-    @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         context.enableScissor(x, y, x + width, y + height);
         MatrixStack matrices = context.getMatrices();
@@ -43,7 +40,6 @@ public class ScrollablePanel implements Drawable, ParentElement {
         context.disableScissor();
     }
 
-    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (mouseX < x || mouseX > x + width || mouseY < y || mouseY > y + height) return false;
         double adjY = mouseY + scrollY;
@@ -53,7 +49,6 @@ public class ScrollablePanel implements Drawable, ParentElement {
         return false;
     }
 
-    @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         if (mouseX < x || mouseX > x + width || mouseY < y || mouseY > y + height) return false;
         double adjY = mouseY + scrollY;
@@ -63,7 +58,6 @@ public class ScrollablePanel implements Drawable, ParentElement {
         return false;
     }
 
-    @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         if (mouseX < x || mouseX > x + width || mouseY < y || mouseY > y + height) return false;
         double adjY = mouseY + scrollY;
@@ -73,7 +67,6 @@ public class ScrollablePanel implements Drawable, ParentElement {
         return false;
     }
 
-    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
         if (mouseX < x || mouseX > x + width || mouseY < y || mouseY > y + height) return false;
         int maxScroll = Math.max(0, contentHeight - height);
@@ -81,22 +74,14 @@ public class ScrollablePanel implements Drawable, ParentElement {
         return true;
     }
 
-    @Override
     public List<? extends Element> children() {
         return children;
     }
 
-    @Override
-    public void forEachChild(Consumer<ClickableWidget> consumer) {
-        children.forEach(consumer);
-    }
-
-    @Override
     public boolean isFocused() {
         return focused;
     }
 
-    @Override
     public void setFocused(boolean focused) {
         this.focused = focused;
     }
