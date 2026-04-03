@@ -1,0 +1,33 @@
+{
+    "name": "mfswordmod:rainbow_ruin/start_pool",
+    "fallback": "minecraft:empty",
+    "elements": [
+        {
+            "weight": 1,
+            "element": {
+                "element_type": "minecraft:single_pool_element",
+                "projection": "rigid",
+                "location": "minecraft:underwater_ruin/big_brick",
+                "processors": "mfswordmod:rainbow_ruin_processors"
+            }
+        },
+        {
+            "weight": 1,
+            "element": {
+                "element_type": "minecraft:single_pool_element",
+                "projection": "rigid",
+                "location": "minecraft:underwater_ruin/big_cracked",
+                "processors": "mfswordmod:rainbow_ruin_processors"
+            }
+        },
+        {
+            "weight": 1,
+            "element": {
+                "element_type": "minecraft:single_pool_element",
+                "projection": "rigid",
+                "location": "minecraft:underwater_ruin/big_mossy",
+                "processors": "mfswordmod:rainbow_ruin_processors"
+            }
+        }
+    ]
+}

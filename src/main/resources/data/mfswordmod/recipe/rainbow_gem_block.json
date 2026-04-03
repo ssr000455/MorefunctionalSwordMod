@@ -1,0 +1,15 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "GGG",
+        "GGG",
+        "GGG"
+    ],
+    "key": {
+        "G": { "item": "mfswordmod:rainbow_gem" }
+    },
+    "result": {
+        "item": "mfswordmod:rainbow_gem_block",
+        "count": 1
+    }
+}

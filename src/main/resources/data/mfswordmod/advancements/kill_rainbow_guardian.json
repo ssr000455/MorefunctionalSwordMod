@@ -1,0 +1,26 @@
+{
+  "parent": "mfswordmod:root",
+  "display": {
+    "icon": {
+      "item": "minecraft:sculk_catalyst"
+    },
+    "title": "守卫征服者",
+    "description": "击杀强大的彩虹守卫",
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "kill_guardian": {
+      "trigger": "minecraft:player_killed_entity",
+      "conditions": {
+        "entity": {
+          "type": "mfswordmod:rainbow_guardian"
+        }
+      }
+    }
+  },
+  "rewards": {
+    "experience": 100
+  }
+}

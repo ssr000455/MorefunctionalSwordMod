@@ -1,0 +1,6 @@
+{
+    "parent": "block/cube_all",
+    "textures": {
+        "all": "mfswordmod:block/rainbow_gem_ore"
+    }
+}

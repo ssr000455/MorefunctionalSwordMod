@@ -1,0 +1,6 @@
+{
+    "parent": "builtin/generated",
+    "textures": {
+        "layer0": "mfswordmod:models/armor/rainbow_gem_layer_2"
+    }
+}

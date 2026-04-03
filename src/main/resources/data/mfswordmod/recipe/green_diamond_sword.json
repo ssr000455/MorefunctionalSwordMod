@@ -1,0 +1,20 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        " G ",
+        " G ",
+        " S "
+    ],
+    "key": {
+        "G": {
+            "item": "mfswordmod:green_diamond"
+        },
+        "S": {
+            "item": "minecraft:stick"
+        }
+    },
+    "result": {
+        "item": "mfswordmod:green_diamond_sword",
+        "count": 1
+    }
+}

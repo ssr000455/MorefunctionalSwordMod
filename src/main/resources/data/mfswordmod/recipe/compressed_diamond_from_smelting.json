@@ -1,0 +1,9 @@
+{
+    "type": "minecraft:smelting",
+    "ingredient": {
+        "item": "minecraft:diamond_block"
+    },
+    "result": "mfswordmod:compressed_diamond",
+    "experience": 5.0,
+    "cookingtime": 800
+}

@@ -1,0 +1,13 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "BBB",
+        "BSB",
+        "BBB"
+    ],
+    "key": {
+        "B": { "item": "mfswordmod:pink_diamond_block" },
+        "S": { "item": "mfswordmod:reinforced_pink_diamond_sword" }
+    },
+    "result": { "item": "mfswordmod:ultra_pink_diamond_sword", "count": 1 }
+}

@@ -1,0 +1,53 @@
+{
+  "parent": "mfswordmod:root",
+  "display": {
+    "icon": {
+      "item": "mfswordmod:rainbow_gem_chestplate"
+    },
+    "title": "彩虹战甲",
+    "description": "穿齐一整套彩虹宝石盔甲",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "helmet": {
+      "trigger": "minecraft:equipped_item",
+      "conditions": {
+        "slot": "head",
+        "item": {
+          "items": ["mfswordmod:rainbow_gem_helmet"]
+        }
+      }
+    },
+    "chestplate": {
+      "trigger": "minecraft:equipped_item",
+      "conditions": {
+        "slot": "chest",
+        "item": {
+          "items": ["mfswordmod:rainbow_gem_chestplate"]
+        }
+      }
+    },
+    "leggings": {
+      "trigger": "minecraft:equipped_item",
+      "conditions": {
+        "slot": "legs",
+        "item": {
+          "items": ["mfswordmod:rainbow_gem_leggings"]
+        }
+      }
+    },
+    "boots": {
+      "trigger": "minecraft:equipped_item",
+      "conditions": {
+        "slot": "feet",
+        "item": {
+          "items": ["mfswordmod:rainbow_gem_boots"]
+        }
+      }
+    }
+  },
+  "requirements": [
+    ["helmet", "chestplate", "leggings", "boots"]
+  ]
+}

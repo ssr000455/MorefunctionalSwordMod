@@ -1,0 +1,20 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "YYY",
+        " S ",
+        " S "
+    ],
+    "key": {
+        "Y": {
+            "item": "mfswordmod:yellow_diamond"
+        },
+        "S": {
+            "item": "minecraft:stick"
+        }
+    },
+    "result": {
+        "item": "mfswordmod:yellow_diamond_pickaxe",
+        "count": 1
+    }
+}

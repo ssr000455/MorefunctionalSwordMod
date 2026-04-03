@@ -1,0 +1,61 @@
+{
+  "parent": "mfswordmod:root",
+  "display": {
+    "icon": {
+      "item": "mfswordmod:rainbow_gem_block"
+    },
+    "title": "彩虹之主",
+    "description": "完成所有彩虹模组的成就，你就是彩虹世界的主宰！",
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "sword": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "mfswordmod:rainbow_sword"
+      }
+    },
+    "armor": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "mfswordmod:rainbow_gem_chestplate"
+      }
+    },
+    "kill_zombie": {
+      "trigger": "minecraft:player_killed_entity",
+      "conditions": {
+        "entity": {
+          "type": "mfswordmod:depleted_rainbow"
+        }
+      }
+    },
+    "kill_ghost": {
+      "trigger": "minecraft:player_killed_entity",
+      "conditions": {
+        "entity": {
+          "type": "mfswordmod:rainbow_ghost"
+        }
+      }
+    },
+    "kill_guardian": {
+      "trigger": "minecraft:player_killed_entity",
+      "conditions": {
+        "entity": {
+          "type": "mfswordmod:rainbow_guardian"
+        }
+      }
+    },
+    "enter_dimension": {
+      "trigger": "minecraft:changed_dimension",
+      "conditions": {
+        "to": "mfswordmod:rainbow_sea"
+      }
+    }
+  },
+  "rewards": {
+    "experience": 500
+  }
+}

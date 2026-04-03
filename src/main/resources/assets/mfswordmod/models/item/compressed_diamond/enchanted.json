@@ -1,0 +1,11 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "mfswordmod:item/compressed_diamond"
+    },
+    "display": {
+        "thirdperson_righthand": {
+            "scale": [0,0,0]
+        }
+    }
+}

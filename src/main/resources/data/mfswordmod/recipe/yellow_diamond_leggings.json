@@ -1,0 +1,17 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "YYY",
+        "Y Y",
+        "Y Y"
+    ],
+    "key": {
+        "Y": {
+            "item": "mfswordmod:yellow_diamond"
+        }
+    },
+    "result": {
+        "item": "mfswordmod:yellow_diamond_leggings",
+        "count": 1
+    }
+}

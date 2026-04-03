@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "mfswordmod",
+  "version": "1.0.1",
+  "name": "更多扩展 Mod",
+  "description": "本模组增加了更多的装备和工具，玩法更加丰富，欢迎游玩",
+  "authors": [
+    "期待"
+  ],
+  "contact": {
+    "homepage": "https://qm.qq.com/q/KynCmwH8sI",
+    "sources": "https://qm.qq.com/q/KynCmwH8sI"
+  },
+  "license": "MPL-2.0",
+  "icon": "assets/mfswordmod/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.qidai.morefunctionalswordmod.ExampleMod"
+    ],
+    "client": [
+      "com.qidai.morefunctionalswordmod.ExampleModClient"
+    ]
+  },
+  "mixins": [
+    "modid.mixins.json",
+    "modid.client.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.15.11",
+    "minecraft": "~1.20.1",
+    "java": ">=17",
+    "fabric-api": "*"
+  },
+  "custom": {
+    "fabric-dimensions": [
+      "mfswordmod:rainbow_sea"
+    ]
+  }
+}

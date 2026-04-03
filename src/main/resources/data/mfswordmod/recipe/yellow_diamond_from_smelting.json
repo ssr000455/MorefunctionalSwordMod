@@ -1,0 +1,14 @@
+{
+    "type": "minecraft:smelting",
+    "ingredient": [
+        {
+            "item": "mfswordmod:yellow_diamond_ore"
+        },
+        {
+            "item": "mfswordmod:deepslate_yellow_diamond_ore"
+        }
+    ],
+    "result": "mfswordmod:yellow_diamond",
+    "experience": 0.5,
+    "cookingtime": 200
+}

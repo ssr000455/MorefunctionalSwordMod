@@ -1,0 +1,17 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "PPP",
+        "PPP",
+        "PPP"
+    ],
+    "key": {
+        "P": {
+            "item": "mfswordmod:purple_diamond"
+        }
+    },
+    "result": {
+        "item": "mfswordmod:purple_diamond_block",
+        "count": 1
+    }
+}

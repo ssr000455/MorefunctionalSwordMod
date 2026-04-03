@@ -1,0 +1,6 @@
+{
+    "parent": "block/cube_all",
+    "textures": {
+        "all": "mfswordmod:block/deepslate_yellow_diamond_ore"
+    }
+}

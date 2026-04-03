@@ -1,0 +1,9 @@
+{
+    "type": "minecraft:smelting",
+    "ingredient": {
+        "item": "mfswordmod:purple_diamond_ore"
+    },
+    "result": "mfswordmod:purple_diamond",
+    "experience": 1.5,
+    "cookingtime": 200
+}

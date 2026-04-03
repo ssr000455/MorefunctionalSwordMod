@@ -1,0 +1,15 @@
+.gradle/
+gradle/
+gradlew
+gradlew.bat
+build/
+out/
+libs/
+vanilla_textures/
+pdf2svg
+z4.sh
+A.txt
+*.log
+run/
+.idea/
+*.iml

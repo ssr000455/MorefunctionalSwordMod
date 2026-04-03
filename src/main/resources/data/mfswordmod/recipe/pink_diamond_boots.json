@@ -1,0 +1,9 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "P P",
+        "P P"
+    ],
+    "key": { "P": { "item": "mfswordmod:pink_diamond" } },
+    "result": { "item": "mfswordmod:pink_diamond_boots", "count": 1 }
+}

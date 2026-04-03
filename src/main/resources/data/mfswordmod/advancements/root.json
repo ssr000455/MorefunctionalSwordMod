@@ -1,0 +1,24 @@
+{
+  "display": {
+    "icon": {
+      "item": "mfswordmod:rainbow_gem"
+    },
+    "title": "彩虹的开端",
+    "description": "获得第一颗彩虹宝石，开启七彩之旅",
+    "background": "minecraft:textures/block/stone.png",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_rainbow_gem": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": ["mfswordmod:rainbow_gem"]
+          }
+        ]
+      }
+    }
+  }
+}

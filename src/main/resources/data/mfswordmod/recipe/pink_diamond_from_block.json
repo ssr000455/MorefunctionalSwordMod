@@ -1,0 +1,5 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "ingredients": [ { "item": "mfswordmod:pink_diamond_block" } ],
+    "result": { "item": "mfswordmod:pink_diamond", "count": 9 }
+}

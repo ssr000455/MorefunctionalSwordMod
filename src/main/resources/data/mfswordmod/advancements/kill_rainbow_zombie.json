@@ -1,0 +1,22 @@
+{
+  "parent": "mfswordmod:root",
+  "display": {
+    "icon": {
+      "item": "minecraft:rotten_flesh"
+    },
+    "title": "彩虹猎手",
+    "description": "击杀一只彩虹枯竭僵尸",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "kill_zombie": {
+      "trigger": "minecraft:player_killed_entity",
+      "conditions": {
+        "entity": {
+          "type": "mfswordmod:depleted_rainbow"
+        }
+      }
+    }
+  }
+}

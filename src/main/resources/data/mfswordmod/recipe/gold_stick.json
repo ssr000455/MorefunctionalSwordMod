@@ -1,0 +1,16 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "G",
+        "G"
+    ],
+    "key": {
+        "G": {
+            "item": "minecraft:gold_nugget"
+        }
+    },
+    "result": {
+        "item": "mfswordmod:gold_stick",
+        "count": 2
+    }
+}
