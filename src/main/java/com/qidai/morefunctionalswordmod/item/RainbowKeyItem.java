@@ -51,7 +51,6 @@ public class RainbowKeyItem extends Item {
             return TypedActionResult.fail(stack);
         }
         
-        // 正确的传送方式：使用 teleport 到目标世界
         serverPlayer.teleport(targetWorld, safePos.getX() + 0.5, safePos.getY(), safePos.getZ() + 0.5, 
                               serverPlayer.getYaw(), serverPlayer.getPitch());
         
@@ -72,8 +71,8 @@ public class RainbowKeyItem extends Item {
     }
     
     private BlockPos findSafePosition(ServerWorld world, BlockPos originalPos) {
-        int searchRadius = 5;
-        int verticalSearch = 10;
+        int searchRadius = 10;
+        int verticalSearch = 20;
         
         BlockPos.Mutable mutablePos = new BlockPos.Mutable();
         
@@ -114,9 +113,17 @@ public class RainbowKeyItem extends Item {
     }
     
     private boolean isSafePosition(ServerWorld world, BlockPos pos) {
+        // 检查脚下是否有固体方块
         if (world.getBlockState(pos.down()).isAir()) return false;
+        // 检查玩家站立位置（1格高）
         if (!world.getBlockState(pos).isAir()) return false;
+        // 检查玩家头部位置（2格高，玩家实际高度1.8格）
         if (!world.getBlockState(pos.up()).isAir()) return false;
+        // 额外检查头顶上方是否有窒息方块（防止卡进天花板）
+        if (!world.getBlockState(pos.up(2)).isAir()) {
+            // 如果头顶上方有方块，检查是否有足够空间
+            if (!world.getBlockState(pos.up(2)).isReplaceable()) return false;
+        }
         return true;
     }
 }

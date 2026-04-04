@@ -1,7 +1,8 @@
 package com.qidai.morefunctionalswordmod.anticheat;
 
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.math.Vec3d;
+import com.qidai.morefunctionalswordmod.ModUtil;
+import com.qidai.morefunctionalswordmod.RainbowSwordItem;
 
 public class MoveCheck {
     private static final double MAX_HORIZONTAL_SPEED = 20.0;
@@ -23,18 +24,35 @@ public class MoveCheck {
         double speedH = horizontalDist / timeDelta;
         double speedV = verticalDist / timeDelta;
 
-        boolean exemptFlight = player.getAbilities().flying || player.getAbilities().allowFlying;
+        // 检查是否持有七彩神剑（可能开启了飞行能力）
+        boolean hasRainbowSword = false;
+        for (var stack : player.getInventory().main) {
+            if (stack.getItem() instanceof RainbowSwordItem) {
+                hasRainbowSword = true;
+                break;
+            }
+        }
+        
+        // 七彩神剑契约后的飞行能力豁免
+        boolean exemptFlight = player.getAbilities().flying || player.getAbilities().allowFlying || hasRainbowSword;
         boolean invalid = false;
 
-        if (!exemptFlight && speedH > MAX_HORIZONTAL_SPEED) invalid = true;
-        if (!exemptFlight && speedV > MAX_VERTICAL_SPEED) invalid = true;
+        if (!exemptFlight && speedH > MAX_HORIZONTAL_SPEED) {
+            invalid = true;
+        }
+        if (!exemptFlight && speedV > MAX_VERTICAL_SPEED) {
+            invalid = true;
+        }
+        // 加速度检测（防止瞬间加速）
         double accel = (horizontalDist - data.totalMovement) / timeDelta;
-        if (!exemptFlight && accel > MAX_ACCELERATION && horizontalDist > 1.0) invalid = true;
+        if (!exemptFlight && accel > MAX_ACCELERATION && horizontalDist > 1.0) {
+            invalid = true;
+        }
 
         if (invalid) {
             data.invalidMoveCount++;
             if (data.invalidMoveCount >= MAX_INVALID_MOVES) {
-                AntiCheatManager.getInstance().kickPlayer(player, "非法移动速度");
+                punish(player, "非法移动速度");
                 return false;
             }
         } else {
@@ -49,5 +67,10 @@ public class MoveCheck {
         data.totalMovement = horizontalDist;
         data.lastTickTime = System.currentTimeMillis();
         return true;
+    }
+
+    private static void punish(ServerPlayerEntity player, String reason) {
+        player.networkHandler.disconnect(net.minecraft.text.Text.literal("反作弊器检测到异常移动: " + reason));
+        AntiCheatManager.getInstance().removePlayer(player);
     }
 }

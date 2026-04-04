@@ -18,7 +18,7 @@ public class AntiCheatAttackMixin {
     public ServerPlayerEntity player;
 
     @Inject(method = "attackEntity", at = @At("HEAD"), cancellable = true)
-    private void onAttackEntity(ServerPlayerEntity player, Entity target, CallbackInfoReturnable<ActionResult> cir) {
+    private void onAttackEntity(ServerPlayerEntity attacker, Entity target, CallbackInfoReturnable<ActionResult> cir) {
         if (!CombatCheck.onAttack(this.player)) {
             cir.setReturnValue(ActionResult.FAIL);
         }

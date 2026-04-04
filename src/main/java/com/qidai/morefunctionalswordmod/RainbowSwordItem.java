@@ -79,47 +79,73 @@ public class RainbowSwordItem extends SwordItem {
     private AttackConfig loadConfig(ItemStack stack) {
         NbtCompound nbt = stack.getOrCreateNbt();
         AttackConfig cfg = new AttackConfig();
-        cfg.currentMode = nbt.getInt("AttackMode");
-        cfg.modifyNbt = nbt.getBoolean("ModifyNbt");
-        cfg.removeEntity = nbt.getBoolean("RemoveEntity");
-        cfg.removeEntityData = nbt.getBoolean("RemoveEntityData");
-        cfg.rangeAttack = nbt.getBoolean("RangeAttack");
-        cfg.attackRange = nbt.getInt("AttackRange");
+        
+        // 所有字段都设置默认值，防止 NBT 缺失导致的问题
+        cfg.currentMode = nbt.contains("AttackMode") ? nbt.getInt("AttackMode") : 0;
+        cfg.modifyNbt = nbt.contains("ModifyNbt") && nbt.getBoolean("ModifyNbt");
+        cfg.removeEntity = nbt.contains("RemoveEntity") && nbt.getBoolean("RemoveEntity");
+        cfg.removeEntityData = nbt.contains("RemoveEntityData") && nbt.getBoolean("RemoveEntityData");
+        cfg.rangeAttack = nbt.contains("RangeAttack") && nbt.getBoolean("RangeAttack");
+        cfg.attackRange = nbt.contains("AttackRange") ? nbt.getInt("AttackRange") : 16;
         if (cfg.attackRange <= 0) cfg.attackRange = 16;
-        cfg.fieldReflection = nbt.getBoolean("FieldReflection");
-        cfg.baseDamage = nbt.getFloat("BaseDamage");
+        if (cfg.attackRange > 256) cfg.attackRange = 256;
+        
+        cfg.fieldReflection = nbt.contains("FieldReflection") && nbt.getBoolean("FieldReflection");
+        cfg.baseDamage = nbt.contains("BaseDamage") ? nbt.getFloat("BaseDamage") : 999999f;
         if (cfg.baseDamage <= 0) cfg.baseDamage = 999999f;
-        cfg.continuousAttack = nbt.getBoolean("ContinuousAttack");
-        cfg.continuousAttackTime = nbt.getInt("ContinuousAttackTime");
+        if (cfg.baseDamage > 99999999f) cfg.baseDamage = 99999999f;
+        
+        cfg.continuousAttack = nbt.contains("ContinuousAttack") && nbt.getBoolean("ContinuousAttack");
+        cfg.continuousAttackTime = nbt.contains("ContinuousAttackTime") ? nbt.getInt("ContinuousAttackTime") : 100;
         if (cfg.continuousAttackTime <= 0) cfg.continuousAttackTime = 100;
-        cfg.lightningAttack = nbt.getBoolean("LightningAttack");
-        cfg.lightningCount = nbt.getInt("LightningCount");
+        if (cfg.continuousAttackTime > 9999) cfg.continuousAttackTime = 9999;
+        
+        cfg.lightningAttack = nbt.contains("LightningAttack") && nbt.getBoolean("LightningAttack");
+        cfg.lightningCount = nbt.contains("LightningCount") ? nbt.getInt("LightningCount") : 1;
         if (cfg.lightningCount <= 0) cfg.lightningCount = 1;
-        cfg.fireAttack = nbt.getBoolean("FireAttack");
-        cfg.explosionAttack = nbt.getBoolean("ExplosionAttack");
-        cfg.explosionRadius = nbt.getInt("ExplosionRadius");
+        if (cfg.lightningCount > 5) cfg.lightningCount = 5;
+        
+        cfg.fireAttack = nbt.contains("FireAttack") && nbt.getBoolean("FireAttack");
+        cfg.explosionAttack = nbt.contains("ExplosionAttack") && nbt.getBoolean("ExplosionAttack");
+        cfg.explosionRadius = nbt.contains("ExplosionRadius") ? nbt.getInt("ExplosionRadius") : 2;
         if (cfg.explosionRadius <= 0) cfg.explosionRadius = 2;
-        cfg.allowFlight = nbt.getBoolean("AllowFlight");
-        cfg.immuneDamage = nbt.getBoolean("ImmuneDamage");
-        cfg.verifyProtection = nbt.getBoolean("VerifyProtection");
-        cfg.attackProtection = nbt.getBoolean("AttackProtection");
-        cfg.playerSpeed = nbt.getInt("PlayerSpeed");
-        cfg.maxHealth = nbt.getInt("MaxHealth");
-        cfg.memoryFieldProtection = nbt.getBoolean("MemoryFieldProtection");
-        cfg.antiCheatProtection = nbt.getBoolean("AntiCheatProtection");
-        cfg.antiCheatEnhanced = nbt.getBoolean("AntiCheatEnhanced");
-        cfg.expAbsorption = nbt.getBoolean("ExpAbsorption");
-        cfg.freezeMode = nbt.getBoolean("FreezeMode");
-        cfg.healMode = nbt.getBoolean("HealMode");
-        cfg.healRange = nbt.getInt("HealRange");
+        if (cfg.explosionRadius > 10) cfg.explosionRadius = 10;
+        
+        cfg.allowFlight = nbt.contains("AllowFlight") && nbt.getBoolean("AllowFlight");
+        cfg.immuneDamage = nbt.contains("ImmuneDamage") && nbt.getBoolean("ImmuneDamage");
+        cfg.verifyProtection = nbt.contains("VerifyProtection") && nbt.getBoolean("VerifyProtection");
+        cfg.attackProtection = nbt.contains("AttackProtection") && nbt.getBoolean("AttackProtection");
+        cfg.playerSpeed = nbt.contains("PlayerSpeed") ? nbt.getInt("PlayerSpeed") : 0;
+        if (cfg.playerSpeed < 0) cfg.playerSpeed = 0;
+        if (cfg.playerSpeed > 99) cfg.playerSpeed = 99;
+        
+        cfg.maxHealth = nbt.contains("MaxHealth") ? nbt.getInt("MaxHealth") : 0;
+        if (cfg.maxHealth < 0) cfg.maxHealth = 0;
+        if (cfg.maxHealth > 9999) cfg.maxHealth = 9999;
+        
+        cfg.memoryFieldProtection = nbt.contains("MemoryFieldProtection") && nbt.getBoolean("MemoryFieldProtection");
+        cfg.antiCheatProtection = nbt.contains("AntiCheatProtection") && nbt.getBoolean("AntiCheatProtection");
+        cfg.antiCheatEnhanced = nbt.contains("AntiCheatEnhanced") && nbt.getBoolean("AntiCheatEnhanced");
+        cfg.expAbsorption = nbt.contains("ExpAbsorption") && nbt.getBoolean("ExpAbsorption");
+        cfg.freezeMode = nbt.contains("FreezeMode") && nbt.getBoolean("FreezeMode");
+        cfg.healMode = nbt.contains("HealMode") && nbt.getBoolean("HealMode");
+        cfg.healRange = nbt.contains("HealRange") ? nbt.getInt("HealRange") : 3;
         if (cfg.healRange <= 0) cfg.healRange = 3;
-        cfg.swordWaveMode = nbt.getBoolean("SwordWaveMode");
-        cfg.swordWaveDuration = nbt.getInt("SwordWaveDuration");
+        if (cfg.healRange > 50) cfg.healRange = 50;
+        
+        cfg.swordWaveMode = nbt.contains("SwordWaveMode") && nbt.getBoolean("SwordWaveMode");
+        cfg.swordWaveDuration = nbt.contains("SwordWaveDuration") ? nbt.getInt("SwordWaveDuration") : 5;
         if (cfg.swordWaveDuration <= 0) cfg.swordWaveDuration = 5;
-        cfg.swordWaveDamage = nbt.getFloat("SwordWaveDamage");
+        if (cfg.swordWaveDuration > 60) cfg.swordWaveDuration = 60;
+        
+        cfg.swordWaveDamage = nbt.contains("SwordWaveDamage") ? nbt.getFloat("SwordWaveDamage") : 999999f;
         if (cfg.swordWaveDamage <= 0) cfg.swordWaveDamage = 999999f;
-        cfg.swordWaveMiningLevel = nbt.getInt("SwordWaveMiningLevel");
+        if (cfg.swordWaveDamage > 9999999f) cfg.swordWaveDamage = 9999999f;
+        
+        cfg.swordWaveMiningLevel = nbt.contains("SwordWaveMiningLevel") ? nbt.getInt("SwordWaveMiningLevel") : 0;
         if (cfg.swordWaveMiningLevel < 0) cfg.swordWaveMiningLevel = 0;
+        if (cfg.swordWaveMiningLevel > 99) cfg.swordWaveMiningLevel = 99;
+        
         return cfg;
     }
 

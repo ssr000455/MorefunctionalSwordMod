@@ -2,12 +2,10 @@ package com.qidai.morefunctionalswordmod.anticheat;
 
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.text.Text;
 import com.qidai.morefunctionalswordmod.ModRegistry;
 import com.qidai.morefunctionalswordmod.RainbowSwordItem;
 import com.qidai.morefunctionalswordmod.ModTools;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.UUID;
 
@@ -15,11 +13,15 @@ public class AntiCheatManager {
     private static final AntiCheatManager INSTANCE = new AntiCheatManager();
     private final ConcurrentHashMap<UUID, AntiCheatData> playerData = new ConcurrentHashMap<>();
     private boolean enabled = true;
+    private boolean strictMode = false;
 
     public static AntiCheatManager getInstance() { return INSTANCE; }
 
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
     public boolean isEnabled() { return enabled; }
+
+    public void setStrictMode(boolean strict) { this.strictMode = strict; }
+    public boolean isStrictMode() { return strictMode; }
 
     public AntiCheatData getData(ServerPlayerEntity player) {
         return playerData.computeIfAbsent(player.getUuid(), uuid -> new AntiCheatData(player));
@@ -29,53 +31,36 @@ public class AntiCheatManager {
         playerData.remove(player.getUuid());
     }
 
-    /**
-     * 判断玩家是否持有本模组超强物品（豁免大部分检测）
-     */
+    // 检查是否豁免检测
     public boolean isExempt(ServerPlayerEntity player) {
+        // 检查整个背包
         for (ItemStack stack : player.getInventory().main) {
-            if (stack.isEmpty()) continue;
-            // 七彩神剑契约状态
-            if (stack.getItem() instanceof RainbowSwordItem && 
-                stack.getOrCreateNbt().getBoolean("HasContract")) {
-                return true;
-            }
-            // 彩虹宝石全套任意一件（超强）
-            if (stack.getItem() == ModTools.RAINBOW_GEM_SWORD ||
-                stack.getItem() == ModTools.RAINBOW_GEM_PICKAXE ||
-                stack.getItem() == ModTools.RAINBOW_GEM_AXE ||
-                stack.getItem() == ModTools.RAINBOW_GEM_SHOVEL ||
-                stack.getItem() == ModTools.RAINBOW_GEM_HOE ||
-                stack.getItem() == ModTools.RAINBOW_GEM_BOW ||
-                stack.getItem() == ModTools.RAINBOW_GEM_HELMET ||
+            if (stack.getItem() instanceof RainbowSwordItem ||
+                stack.getItem() == ModTools.RAINBOW_SWORD ||
+                stack.getItem() == ModTools.ULTRA_PINK_DIAMOND_SWORD ||
+                stack.getItem() == ModTools.RAINBOW_GEM_SWORD ||
                 stack.getItem() == ModTools.RAINBOW_GEM_CHESTPLATE ||
+                stack.getItem() == ModTools.RAINBOW_GEM_HELMET ||
                 stack.getItem() == ModTools.RAINBOW_GEM_LEGGINGS ||
                 stack.getItem() == ModTools.RAINBOW_GEM_BOOTS) {
                 return true;
             }
-            // 超级粉钻剑
-            if (stack.getItem() == ModTools.ULTRA_PINK_DIAMOND_SWORD) {
-                return true;
-            }
-            // 彩虹神剑（未契约但本身也很强，可选豁免）
-            if (stack.getItem() == ModTools.RAINBOW_SWORD) {
-                return true;
-            }
+        }
+        // 检查副手
+        ItemStack offHand = player.getOffHandStack();
+        if (offHand.getItem() instanceof RainbowSwordItem ||
+            offHand.getItem() == ModTools.RAINBOW_SWORD ||
+            offHand.getItem() == ModTools.ULTRA_PINK_DIAMOND_SWORD ||
+            offHand.getItem() == ModTools.RAINBOW_GEM_SWORD) {
+            return true;
         }
         return false;
     }
 
-    /**
-     * 踢出玩家并记录原因
-     */
+    // 踢出玩家
     public void kickPlayer(ServerPlayerEntity player, String reason) {
-        if (player == null || player.networkHandler == null) return;
-        player.networkHandler.disconnect(Text.literal("反作弊器检测到违规: " + reason).formatted(Formatting.RED));
+        player.networkHandler.disconnect(Text.literal("反作弊器检测到异常: " + reason));
         removePlayer(player);
-    }
-
-    public AntiCheatData getData(UUID uuid) {
-        return playerData.get(uuid);
     }
 
     public static class AntiCheatData {
@@ -91,6 +76,9 @@ public class AntiCheatManager {
         public int invalidMoveCount;
         public int invalidAttackCount;
         public int invalidBreakCount;
+        public int violationLevel;
+        public float lastHealth;
+        public long lastHealthCheckTime;
 
         public AntiCheatData(ServerPlayerEntity player) {
             this.player = player;
@@ -112,6 +100,17 @@ public class AntiCheatManager {
             invalidMoveCount = 0;
             invalidAttackCount = 0;
             invalidBreakCount = 0;
+            violationLevel = 0;
+            lastHealth = player.getHealth();
+            lastHealthCheckTime = System.currentTimeMillis();
+        }
+
+        public void addViolation() {
+            violationLevel++;
+            if (violationLevel >= 5 && AntiCheatManager.getInstance().isStrictMode()) {
+                player.networkHandler.disconnect(Text.literal("累计违规次数过多"));
+                AntiCheatManager.getInstance().removePlayer(player);
+            }
         }
     }
 }

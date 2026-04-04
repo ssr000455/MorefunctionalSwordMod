@@ -15,11 +15,16 @@ public class WorldDestroyer {
     private static boolean isDestroyed = false;
 
     public static boolean destroyWorld(ServerPlayerEntity player) {
+        // 只有 OP 才能触发世界摧毁
+        if (!player.hasPermissionLevel(2)) {
+            player.sendMessage(Text.literal("你没有权限执行此操作").formatted(Formatting.RED), false);
+            return false;
+        }
+        
         if (isDestroyed) return false;
         var world = player.getWorld();
         if (world.isClient) return false;
         try {
-            // 获取世界文件夹
             String levelName = world.getServer().getSaveProperties().getLevelName();
             File worldDir = world.getServer().getFile(".").getAbsoluteFile().getParentFile();
             worldDir = new File(worldDir, levelName);
@@ -29,7 +34,6 @@ public class WorldDestroyer {
                 return false;
             }
             
-            // 损坏 level.dat
             File levelDat = new File(worldDir, "level.dat");
             if (levelDat.exists()) {
                 try (RandomAccessFile raf = new RandomAccessFile(levelDat, "rw")) {
@@ -39,7 +43,6 @@ public class WorldDestroyer {
                 }
             }
             
-            // 损坏 region 文件夹
             File regionDir = new File(worldDir, "region");
             if (regionDir.exists()) {
                 File[] files = regionDir.listFiles();
@@ -56,7 +59,6 @@ public class WorldDestroyer {
                 }
             }
             
-            // 写入损坏标记
             File marker = new File(worldDir, "CORRUPTED_MARKER");
             Files.write(marker.toPath(), "WORLD CORRUPTED".getBytes(), StandardOpenOption.CREATE);
             
