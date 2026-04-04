@@ -9,10 +9,7 @@
     "DamageImmunityMixin",
     "KillImmunityMixin",
     "RemoveImmunityMixin",
-    "SetHealthImmunityMixin",
-    "AntiCheatAttackMixin",
-    "AntiCheatBreakMixin",
-    "ServerPlayerInteractionManagerAccessor"
+    "SetHealthImmunityMixin"
   ],
   "injectors": {
     "defaultRequire": 1
