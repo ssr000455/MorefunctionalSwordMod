@@ -7,6 +7,9 @@
 - Minecraft: 1.20.1
 - Fabric Loader: >=0.15.11
 - Fabric API: >=0.92.0
+- gradle: 8.7
+- jdk: 17
+
 
 ## 新增内容
 
