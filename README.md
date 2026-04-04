@@ -91,24 +91,16 @@
 
 击败灾厄之风可获得“灾厄之风”物品，用于召唤灾厄鬼兵。
 
-## 如何开始
-
-1. 采集绿钻、黄钻、紫钻、粉钻矿石
-2. 合成对应钻石工具和盔甲
-3. 使用四种钻石合成彩虹宝石
-4. 使用彩虹宝石合成彩虹宝石装备
-5. 使用彩虹宝石和钻石剑合成七彩神剑
-6. 达成契约获得完全能力
 
 ## 指令
 
 
-/mfswordmod give <物品ID> [数量] - 给予指定物品
-/mfswordmod rainbow mode <0-3> - 设置七彩神剑攻击模式
-/mfswordmod rainbow range <1-64> - 设置范围攻击范围
-/mfswordmod rainbow damage <数值> - 设置基础伤害
-/mfswordmod rainbow contract - 强制达成契约
-/mfswordmod rainbow settings true - 打开设置界面
+• /mfswordmod give <物品ID> [数量] - 给予指定物品
+• /mfswordmod rainbow mode <0-3> - 设置七彩神剑攻击模式
+• /mfswordmod rainbow range <1-64> - 设置范围攻击范围
+• /mfswordmod rainbow damage <数值> - 设置基础伤害
+• /mfswordmod rainbow contract - 强制达成契约
+• /mfswordmod rainbow settings true - 打开设置界面
 
 
 ## 按键绑定（客户端）
@@ -123,4 +115,4 @@
 ## 协议
 
 MPL 2.0
-EOF
+
