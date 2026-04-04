@@ -95,12 +95,18 @@
 ## 指令
 
 
-• /mfswordmod give <物品ID> [数量] - 给予指定物品
-• /mfswordmod rainbow mode <0-3> - 设置七彩神剑攻击模式
-• /mfswordmod rainbow range <1-64> - 设置范围攻击范围
-• /mfswordmod rainbow damage <数值> - 设置基础伤害
-• /mfswordmod rainbow contract - 强制达成契约
-• /mfswordmod rainbow settings true - 打开设置界面
+- /mfswordmod give <物品ID> [数量] - 给予指定物品
+
+- /mfswordmod rainbow mode <0-3> - 设置七彩神剑攻击模式
+
+- /mfswordmod rainbow range <1-64> - 设置范围攻击范围
+
+- /mfswordmod rainbow damage <数值> - 设置基础伤害
+
+- /mfswordmod rainbow contract - 强制达成契约
+
+- /mfswordmod rainbow settings true - 打开设置界面
+
 
 
 ## 按键绑定（客户端）
@@ -115,4 +121,11 @@
 ## 协议
 
 MPL 2.0
+
+## 后续计划
+
+- 支持更多的Minecraft版本
+- 添加更多的玩法
+- 完善模组部分物品模型、纹理等
+- 修复部分bug
 
