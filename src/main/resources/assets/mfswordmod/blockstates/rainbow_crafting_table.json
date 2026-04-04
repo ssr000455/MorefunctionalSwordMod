@@ -1,5 +1,7 @@
 {
   "variants": {
-    "": { "model": "mfswordmod:block/rainbow_crafting_table" }
+    "normal": {
+      "model": "mfswordmod:block/rainbow_crafting_table"
+    }
   }
 }
