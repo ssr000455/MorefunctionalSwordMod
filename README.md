@@ -4,9 +4,9 @@
 
 ## 版本
 
-- Minecraft: 1.20.1
-- Fabric Loader: >=0.15.11
-- Fabric API: >=0.92.0
+- Minecraft: `1.20.1`
+- Fabric Loader: `>=0.15.11`
+- Fabric API: `>=0.92.0`
 
 ## 本模组分为个人版和服务器版
 
@@ -15,7 +15,7 @@
 - 反作弊器
 - 反作弊功能
 - 在设置界面中的反作弊功能
-- Nbt加密
+- `Nbt`加密
 - 检测
 
 
@@ -97,15 +97,15 @@
 ## 指令
 
 
-- /mfswordmod give <物品ID> [数量] - 给予指定物品
+- `/mfswordmod give <物品ID> [数量]` - 给予指定物品
 
-- /mfswordmod rainbow mode <0-3> - 设置七彩神剑攻击模式
+- `/mfswordmod rainbow mode <0-3>` - 设置七彩神剑攻击模式
 
-- /mfswordmod rainbow range <1-64> - 设置范围攻击范围
+- `/mfswordmod rainbow range <1-64>` - 设置范围攻击范围
 
-- /mfswordmod rainbow damage <数值> - 设置基础伤害
+- `/mfswordmod rainbow damage <数值>` - 设置基础伤害
 
-- /mfswordmod rainbow contract - 强制达成契约
+- `/mfswordmod rainbow contract` - 强制达成契约
 
 - `/mfswordmod rainbow settings true` - 打开设置界面
 
@@ -113,16 +113,16 @@
 
 ## 按键绑定（客户端）
 
-- V键：切换毁灭模式
-- K键：切换特殊攻击模式
-- I键：清除所有模式
-- J键：冰冻模式
-- N键：治疗模式
-- M键：剑气模式
+- `V`键：切换毁灭模式
+- `K`键：切换特殊攻击模式
+- `I`键：清除所有模式
+- `J`键：冰冻模式
+- `N`键：治疗模式
+- `M`键：剑气模式
 
 ## 协议
 
-MPL 2.0
+`MPL 2.0`
 
 ## 后续计划
 
