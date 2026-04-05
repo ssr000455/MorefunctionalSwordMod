@@ -10,15 +10,15 @@ public class CombatCheck {
     private static final int MAX_INVALID_ATTACKS = 3;
 
     public static boolean onAttack(ServerPlayerEntity player) {
-        if (AntiCheatManager.getInstance().isExempt(player)) return true;
-
         AntiCheatManager.AntiCheatData data = AntiCheatManager.getInstance().getData(player);
         ItemStack mainHand = player.getMainHandStack();
         boolean isRainbowSword = mainHand.getItem() instanceof RainbowSwordItem;
         boolean isSpecialMode = isRainbowSword && mainHand.getOrCreateNbt().getBoolean("SpecialAttackMode");
         boolean isContinuousAttack = isRainbowSword && mainHand.getOrCreateNbt().getBoolean("ContinuousAttack");
 
-        if (isSpecialMode || isContinuousAttack) return true;
+        if (isSpecialMode || isContinuousAttack) {
+            return true;
+        }
 
         long now = System.currentTimeMillis();
         if (now - data.lastAttackTime > WINDOW_MS) {
@@ -29,7 +29,7 @@ public class CombatCheck {
             if (cps > MAX_CPS) {
                 data.invalidAttackCount++;
                 if (data.invalidAttackCount >= MAX_INVALID_ATTACKS) {
-                    AntiCheatManager.getInstance().kickPlayer(player, String.format("攻击速度异常 (%.1f CPS)", cps));
+                    CheatPunisher.punish(player, "攻击速度异常 (" + String.format("%.1f", cps) + " CPS)");
                     return false;
                 }
             } else {

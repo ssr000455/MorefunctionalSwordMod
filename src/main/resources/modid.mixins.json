@@ -9,7 +9,8 @@
     "DamageImmunityMixin",
     "KillImmunityMixin",
     "RemoveImmunityMixin",
-    "SetHealthImmunityMixin"
+    "SetHealthImmunityMixin",
+    "PlayerMoveCensorMixin"
   ],
   "injectors": {
     "defaultRequire": 1
