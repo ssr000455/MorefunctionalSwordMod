@@ -107,7 +107,7 @@
 
 - /mfswordmod rainbow contract - 强制达成契约
 
-- /mfswordmod rainbow settings true - 打开设置界面
+- `/mfswordmod rainbow settings true` - 打开设置界面
 
 
 
