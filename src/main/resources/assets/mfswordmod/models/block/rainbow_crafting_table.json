@@ -1,0 +1,12 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "particle": "mfswordmod:block/rainbow_crafting_table_front",
+    "north": "mfswordmod:block/rainbow_crafting_table_front",
+    "south": "mfswordmod:block/rainbow_crafting_table_side",
+    "east": "mfswordmod:block/rainbow_crafting_table_side",
+    "west": "mfswordmod:block/rainbow_crafting_table_side",
+    "up": "mfswordmod:block/rainbow_crafting_table_top",
+    "down": "mfswordmod:block/rainbow_crafting_table_side"
+  }
+}

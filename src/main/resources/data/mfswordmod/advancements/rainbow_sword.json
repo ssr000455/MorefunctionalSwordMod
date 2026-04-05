@@ -1,0 +1,24 @@
+{
+  "parent": "mfswordmod:root",
+  "display": {
+    "icon": {
+      "item": "mfswordmod:rainbow_sword"
+    },
+    "title": "七彩神兵",
+    "description": "打造出传说中的七彩神剑",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_rainbow_sword": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": ["mfswordmod:rainbow_sword"]
+          }
+        ]
+      }
+    }
+  }
+}

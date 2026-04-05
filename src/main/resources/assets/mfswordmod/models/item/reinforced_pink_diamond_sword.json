@@ -1,0 +1,6 @@
+{
+    "parent": "item/handheld",
+    "textures": {
+        "layer0": "mfswordmod:item/reinforced_pink_diamond_sword"
+    }
+}

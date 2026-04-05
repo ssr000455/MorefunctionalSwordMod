@@ -1,0 +1,17 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "GGG",
+        "G G",
+        "G G"
+    ],
+    "key": {
+        "G": {
+            "item": "mfswordmod:green_diamond"
+        }
+    },
+    "result": {
+        "item": "mfswordmod:green_diamond_leggings",
+        "count": 1
+    }
+}

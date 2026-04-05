@@ -1,0 +1,17 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "GDG",
+        "DPD",
+        "GDG"
+    ],
+    "key": {
+        "G": { "item": "mfswordmod:green_diamond" },
+        "D": { "item": "mfswordmod:purple_diamond" },
+        "P": { "item": "mfswordmod:pink_diamond" }
+    },
+    "result": {
+        "item": "mfswordmod:rainbow_gem",
+        "count": 1
+    }
+}

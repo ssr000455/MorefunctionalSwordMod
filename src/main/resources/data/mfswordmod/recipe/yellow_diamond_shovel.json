@@ -1,0 +1,20 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "Y",
+        "S",
+        "S"
+    ],
+    "key": {
+        "Y": {
+            "item": "mfswordmod:yellow_diamond"
+        },
+        "S": {
+            "item": "minecraft:stick"
+        }
+    },
+    "result": {
+        "item": "mfswordmod:yellow_diamond_shovel",
+        "count": 1
+    }
+}

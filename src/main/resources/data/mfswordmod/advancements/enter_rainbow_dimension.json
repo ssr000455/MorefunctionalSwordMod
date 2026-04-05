@@ -1,0 +1,20 @@
+{
+  "parent": "mfswordmod:root",
+  "display": {
+    "icon": {
+      "item": "mfswordmod:rainbow_portal"
+    },
+    "title": "踏入彩虹之地",
+    "description": "进入你专属的彩虹维度",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "enter_dimension": {
+      "trigger": "minecraft:changed_dimension",
+      "conditions": {
+        "to": "mfswordmod:rainbow_sea"
+      }
+    }
+  }
+}

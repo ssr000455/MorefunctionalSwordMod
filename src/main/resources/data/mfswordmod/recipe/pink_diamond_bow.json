@@ -1,0 +1,13 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        " PS",
+        "P S",
+        " PS"
+    ],
+    "key": {
+        "P": { "item": "mfswordmod:pink_diamond" },
+        "S": { "item": "minecraft:string" }
+    },
+    "result": { "item": "mfswordmod:pink_diamond_bow", "count": 1 }
+}

@@ -1,0 +1,13 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "PPP",
+        " S ",
+        " S "
+    ],
+    "key": {
+        "P": { "item": "mfswordmod:pink_diamond" },
+        "S": { "item": "minecraft:stick" }
+    },
+    "result": { "item": "mfswordmod:pink_diamond_pickaxe", "count": 1 }
+}

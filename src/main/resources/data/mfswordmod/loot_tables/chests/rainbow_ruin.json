@@ -1,0 +1,129 @@
+{
+    "type": "minecraft:chest",
+    "pools": [
+        {
+            "rolls": {
+                "min": 3,
+                "max": 6
+            },
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "name": "minecraft:bread",
+                    "weight": 10,
+                    "functions": [
+                        {
+                            "function": "minecraft:set_count",
+                            "count": {
+                                "min": 1,
+                                "max": 3
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "minecraft:iron_ingot",
+                    "weight": 8,
+                    "functions": [
+                        {
+                            "function": "minecraft:set_count",
+                            "count": {
+                                "min": 1,
+                                "max": 4
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "minecraft:string",
+                    "weight": 8,
+                    "functions": [
+                        {
+                            "function": "minecraft:set_count",
+                            "count": {
+                                "min": 2,
+                                "max": 6
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "minecraft:saddle",
+                    "weight": 3
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "minecraft:name_tag",
+                    "weight": 4
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mfswordmod:rainbow_gem",
+                    "weight": 5,
+                    "functions": [
+                        {
+                            "function": "minecraft:set_count",
+                            "count": {
+                                "min": 1,
+                                "max": 3
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mfswordmod:rainbow_gem_sword",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mfswordmod:rainbow_gem_pickaxe",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mfswordmod:rainbow_gem_axe",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mfswordmod:rainbow_gem_shovel",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mfswordmod:rainbow_gem_hoe",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mfswordmod:rainbow_gem_bow",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mfswordmod:rainbow_gem_helmet",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mfswordmod:rainbow_gem_chestplate",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mfswordmod:rainbow_gem_leggings",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mfswordmod:rainbow_gem_boots",
+                    "weight": 1
+                }
+            ]
+        }
+    ]
+}

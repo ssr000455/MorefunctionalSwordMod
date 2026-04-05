@@ -1,0 +1,17 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "CCC",
+        "CCC",
+        "CCC"
+    ],
+    "key": {
+        "C": {
+            "item": "mfswordmod:compressed_diamond"
+        }
+    },
+    "result": {
+        "item": "mfswordmod:compressed_diamond_block",
+        "count": 1
+    }
+}

@@ -1,0 +1,22 @@
+{
+  "parent": "mfswordmod:root",
+  "display": {
+    "icon": {
+      "item": "minecraft:phantom_membrane"
+    },
+    "title": "幽灵克星",
+    "description": "击杀一只彩虹幻翼",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "kill_ghost": {
+      "trigger": "minecraft:player_killed_entity",
+      "conditions": {
+        "entity": {
+          "type": "mfswordmod:rainbow_ghost"
+        }
+      }
+    }
+  }
+}

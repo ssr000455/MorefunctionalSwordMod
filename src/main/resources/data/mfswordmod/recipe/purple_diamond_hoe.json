@@ -1,0 +1,20 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "PP ",
+        " S ",
+        " S "
+    ],
+    "key": {
+        "P": {
+            "item": "mfswordmod:purple_diamond"
+        },
+        "S": {
+            "item": "mfswordmod:purple_diamond_stick"
+        }
+    },
+    "result": {
+        "item": "mfswordmod:purple_diamond_hoe",
+        "count": 1
+    }
+}
