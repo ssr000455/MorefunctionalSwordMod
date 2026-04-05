@@ -19,17 +19,13 @@ public class CheatScreen extends Screen {
         int sw = this.width;
         int sh = this.height;
 
-        // 计算缩放比例（保持图片完整，不变形）
         float scale = Math.min((float) sw / IMG_W, (float) sh / IMG_H);
         int drawW = (int) (IMG_W * scale);
         int drawH = (int) (IMG_H * scale);
         int x = (sw - drawW) / 2;
         int y = (sh - drawH) / 2;
 
-        // 黑色背景填充多余区域
         context.fill(0, 0, sw, sh, 0xFF000000);
-
-        // 绘制图片（居中，不变形）
         context.drawTexture(CHEAT_IMG, x, y, 0, 0, drawW, drawH, drawW, drawH);
 
         super.render(context, mouseX, mouseY, delta);
@@ -50,7 +46,7 @@ public class CheatScreen extends Screen {
         return true;
     }
 
-    @Override
+    // 移除 @Override，避免映射版本差异导致的编译错误
     public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
         // 不渲染默认背景
     }

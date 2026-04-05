@@ -32,4 +32,9 @@ public class CheatPunisher {
         // 禁用玩家操作
         player.changeGameMode(net.minecraft.world.GameMode.SPECTATOR);
     }
+
+    // 新增方法：检查玩家是否正在被惩罚
+    public static boolean isUnderPunishment(ServerPlayerEntity player) {
+        return punishments.containsKey(player);
+    }
 }
