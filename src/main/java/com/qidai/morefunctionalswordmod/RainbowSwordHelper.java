@@ -1,5 +1,6 @@
 package com.qidai.morefunctionalswordmod;
 
+import com.qidai.morefunctionalswordmod.security.NbtEncryptionManager;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
@@ -21,7 +22,7 @@ public class RainbowSwordHelper {
                        nbt.getBoolean("HasContract") +
                        nbt.getInt("AttackMode") +
                        nbt.getFloat("BaseDamage") +
-                       nbt.getInt("AttackRange"); // 修正字段名
+                       nbt.getInt("AttackRange");
             var digest = MessageDigest.getInstance("SHA-256");
             var hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
             var hex = new StringBuilder();
@@ -64,5 +65,51 @@ public class RainbowSwordHelper {
 
     public static void clear(ServerPlayerEntity player) {
         BACKUP.remove(player);
+    }
+
+    // ========== 加密集成方法 ==========
+    public static void applyEncryption(ServerPlayerEntity player, ItemStack stack, boolean enable) {
+        if (!(stack.getItem() instanceof RainbowSwordItem)) return;
+        NbtCompound nbt = stack.getOrCreateNbt();
+        if (enable) {
+            // 加密当前 NBT 并存储到 EncryptedData，清空原内容但保留必要字段
+            String encrypted = NbtEncryptionManager.encryptNbt(player, nbt);
+            if (encrypted != null) {
+                NbtCompound backup = new NbtCompound();
+                backup.putString("EncryptedData", encrypted);
+                // 保留关键字段
+                if (nbt.contains("OwnerUUID")) backup.putUuid("OwnerUUID", nbt.getUuid("OwnerUUID"));
+                if (nbt.contains("HasContract")) backup.putBoolean("HasContract", nbt.getBoolean("HasContract"));
+                stack.setNbt(backup);
+            }
+        } else {
+            // 解密恢复
+            if (nbt.contains("EncryptedData")) {
+                String encrypted = nbt.getString("EncryptedData");
+                NbtCompound decrypted = NbtEncryptionManager.decryptNbt(player, encrypted);
+                if (decrypted != null) {
+                    decrypted.putBoolean("EncryptionEnabled", false);
+                    stack.setNbt(decrypted);
+                }
+            }
+        }
+        nbt = stack.getOrCreateNbt();
+        nbt.putBoolean("EncryptionEnabled", enable);
+        update(player, stack);
+    }
+
+    public static boolean isEncryptionEnabled(ItemStack stack) {
+        return stack.getOrCreateNbt().getBoolean("EncryptionEnabled");
+    }
+
+    public static NbtCompound getDecryptedNbt(ServerPlayerEntity player, ItemStack stack) {
+        if (!(stack.getItem() instanceof RainbowSwordItem)) return stack.getOrCreateNbt();
+        NbtCompound nbt = stack.getOrCreateNbt();
+        if (nbt.getBoolean("EncryptionEnabled") && nbt.contains("EncryptedData")) {
+            String encrypted = nbt.getString("EncryptedData");
+            NbtCompound decrypted = NbtEncryptionManager.decryptNbt(player, encrypted);
+            if (decrypted != null) return decrypted;
+        }
+        return nbt;
     }
 }
