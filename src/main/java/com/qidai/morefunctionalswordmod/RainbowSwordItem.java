@@ -71,7 +71,12 @@ public class RainbowSwordItem extends SwordItem {
         float offset = getHueOffset();
 
         tooltip.add(rainbowText("七彩神光", offset));
-        tooltip.add(rainbowText("infinity+", offset));
+        float displayDamage = nbt.contains("BaseDamage") ? nbt.getFloat("BaseDamage") : 999999f;
+        if (Float.isInfinite(displayDamage)) {
+            tooltip.add(rainbowText("infinity+", offset));
+        } else {
+            tooltip.add(Text.literal("伤害：" + (int) displayDamage).formatted(Formatting.AQUA));
+        }
 
         tooltip.add(Text.literal("当前模式：" + (nbt.getInt("AttackMode") == 0 ? "安全模式" : nbt.getInt("AttackMode") == 1 ? "范围攻击模式" : nbt.getInt("AttackMode") == 2 ? "无限制模式" : "攻击模式")).formatted(Formatting.WHITE));
         tooltip.add(Text.literal("毁灭模式：" + (nbt.getBoolean("DestructMode") ? "开启" : "关闭")).formatted(nbt.getBoolean("DestructMode") ? Formatting.AQUA : Formatting.GRAY));
@@ -128,8 +133,8 @@ public class RainbowSwordItem extends SwordItem {
         if (cfg.attackRange > 256) cfg.attackRange = 256;
         cfg.fieldReflection = nbt.contains("FieldReflection") && nbt.getBoolean("FieldReflection");
         cfg.baseDamage = nbt.contains("BaseDamage") ? nbt.getFloat("BaseDamage") : 999999f;
-        if (cfg.baseDamage <= 0) cfg.baseDamage = 999999f;
-        if (cfg.baseDamage > 99999999f) cfg.baseDamage = 99999999f;
+        if (cfg.baseDamage <= 0 && !Float.isInfinite(cfg.baseDamage)) cfg.baseDamage = 999999f;
+        if (cfg.baseDamage > 99999999f && !Float.isInfinite(cfg.baseDamage)) cfg.baseDamage = 99999999f;
         cfg.continuousAttack = nbt.contains("ContinuousAttack") && nbt.getBoolean("ContinuousAttack");
         cfg.continuousAttackTime = nbt.contains("ContinuousAttackTime") ? nbt.getInt("ContinuousAttackTime") : 100;
         if (cfg.continuousAttackTime <= 0) cfg.continuousAttackTime = 100;
@@ -198,8 +203,8 @@ public class RainbowSwordItem extends SwordItem {
     private void rangeAttack(ServerPlayerEntity player, AttackConfig cfg) {
         var world = player.getWorld();
         var center = player.getBlockPos();
-        var box = new Box(center).expand(cfg.attackRange);
-        var entities = world.getEntitiesByClass(Entity.class, box, e -> e != player);
+        Box box = new Box(center).expand(cfg.attackRange);
+        List<Entity> entities = world.getEntitiesByClass(Entity.class, box, e -> e != player);
         for (Entity e : entities) {
             killEntity(e, cfg);
             addEffects(e, cfg);
@@ -253,7 +258,7 @@ public class RainbowSwordItem extends SwordItem {
         }
 
         Box box = new Box(start, start.add(lookVec.multiply(maxDistance))).expand(1.5);
-        var entities = world.getEntitiesByClass(LivingEntity.class, box, e -> e != player);
+        List<LivingEntity> entities = world.getEntitiesByClass(LivingEntity.class, box, e -> e != player);
         for (LivingEntity target : entities) {
             target.damage(player.getDamageSources().playerAttack(player), cfg.swordWaveDamage);
             addEffects(target, cfg);
@@ -337,7 +342,7 @@ public class RainbowSwordItem extends SwordItem {
             AttackConfig cfg = loadConfig(stack);
             int range = cfg.healRange;
             Box box = new Box(player.getBlockPos()).expand(range);
-            var entities = world.getEntitiesByClass(LivingEntity.class, box, e -> e.isAlive() && !(e instanceof ServerPlayerEntity && e != player));
+            List<LivingEntity> entities = world.getEntitiesByClass(LivingEntity.class, box, e -> e.isAlive() && !(e instanceof ServerPlayerEntity && e != player));
             int count = 0;
             for (LivingEntity target : entities) {
                 target.setHealth(target.getMaxHealth());
@@ -393,7 +398,7 @@ public class RainbowSwordItem extends SwordItem {
         else if (useTime >= 20) multiplier = 2.0f;
 
         Box box = new Box(player.getBlockPos()).expand(cfg.attackRange * 2);
-        var entities = world.getEntitiesByClass(LivingEntity.class, box, e -> e != player);
+        List<LivingEntity> entities = world.getEntitiesByClass(LivingEntity.class, box, e -> e != player);
         for (LivingEntity target : entities) {
             target.damage(player.getDamageSources().playerAttack(player), cfg.baseDamage * multiplier);
             addEffects(target, cfg);
