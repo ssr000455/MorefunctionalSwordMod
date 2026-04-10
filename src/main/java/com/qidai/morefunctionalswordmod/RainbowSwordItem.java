@@ -84,7 +84,7 @@ public class RainbowSwordItem extends SwordItem {
             tooltip.add(Text.literal("伤害：" + (int) displayDamage).formatted(Formatting.AQUA));
         }
 
-        tooltip.add(Text.literal("当前模式：" + (nbt.getInt("AttackMode") == 0 ? "安全模式" : nbt.getInt("AttackMode") == 1 ? "范围攻击模式" : nbt.getInt("AttackMode") == 2 ? "无限制模式" : "攻击模式")).formatted(Formatting.WHITE));
+        tooltip.add(Text.literal("当前模式：" + (nbt.getInt("AttackMode") == 0 ? "安全模式" : nbt.getInt("AttackMode") == 1 ? "范围 攻击模式" : nbt.getInt("AttackMode") == 2 ? "无限制模式" : "攻击模式")).formatted(Formatting.WHITE));
         tooltip.add(Text.literal("毁灭模式：" + (nbt.getBoolean("DestructMode") ? "开启" : "关闭")).formatted(nbt.getBoolean("DestructMode") ? Formatting.AQUA : Formatting.GRAY));
         tooltip.add(Text.literal("特殊攻击：" + (nbt.getBoolean("SpecialAttackMode") ? "开启" : "关闭")).formatted(nbt.getBoolean("SpecialAttackMode") ? Formatting.LIGHT_PURPLE : Formatting.GRAY));
         tooltip.add(Text.literal("冰冻模式：" + (nbt.getBoolean("FreezeMode") ? "开启" : "关闭")).formatted(nbt.getBoolean("FreezeMode") ? Formatting.AQUA : Formatting.GRAY));
@@ -580,10 +580,5 @@ public class RainbowSwordItem extends SwordItem {
         for (BlockPos pos : toBreak) {
             world.breakBlock(pos, true);
         }
-    }
-
-    private boolean isLogBlock(net.minecraft.block.Block block) {
-        String blockName = block.toString().toLowerCase();
-        return blockName.contains("log") || blockName.contains("wood") || blockName.contains("stem");
     }
 }
