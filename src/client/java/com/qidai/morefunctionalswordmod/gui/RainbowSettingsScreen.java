@@ -35,16 +35,16 @@ public class RainbowSettingsScreen extends Screen {
     private ScrollablePanel scrollPanel;
     private final List<ClickableWidget> allWidgets = new ArrayList<>();
 
-    // 设置数据
+    // 设置数据 - 个人版只保留非反作弊功能
     private boolean modifyNbt, removeEntity, removeEntityData, rangeAttack, fieldReflection, continuousAttack, lightningAttack, fireAttack, explosionAttack;
     private int attackRange = 16, continuousAttackTime = 100, lightningCount = 1, explosionRadius = 2;
     private float baseDamage = 999999f;
     private boolean infiniteDamage = true;
 
-    private boolean allowFlight, immuneDamage, protectAndEncryptNbt, verifyProtection, attackProtection, memoryProtection;
+    private boolean allowFlight, immuneDamage;
     private int playerSpeed = 1, gamemode = 0, maxHealth = 20;
 
-    private boolean memoryFieldProtection, antiCheatProtection, antiCheatEnhanced, expAbsorption, freezeMode, healMode, swordWaveMode;
+    private boolean expAbsorption, freezeMode, healMode, swordWaveMode;
     private int healRange = 3, swordWaveDuration = 5, swordWaveMiningLevel = 0;
     private float swordWaveDamage = 999999f;
 
@@ -91,23 +91,16 @@ public class RainbowSettingsScreen extends Screen {
         y = addToggle("攻击带爆炸", explosionAttack, v -> explosionAttack = v, panelX, y, 0);
         y = addIntInput("爆炸半径", explosionRadius, 1, 10, v -> explosionRadius = v, panelX, y, 0);
 
-        // 保护页
+        // 保护页（移除反作弊项）
         y = panelY + 10;
         y = addToggle("飞行", allowFlight, v -> allowFlight = v, panelX, y, 1);
         y = addToggle("免疫伤害", immuneDamage, v -> immuneDamage = v, panelX, y, 1);
-        y = addToggle("保护并加密NBT", protectAndEncryptNbt, v -> protectAndEncryptNbt = v, panelX, y, 1);
-        y = addToggle("验证保护机制", verifyProtection, v -> verifyProtection = v, panelX, y, 1);
-        y = addToggle("攻击保护", attackProtection, v -> attackProtection = v, panelX, y, 1);
-        y = addToggle("内存保护", memoryProtection, v -> memoryProtection = v, panelX, y, 1);
         y = addIntInputWithConfirm("人物速度", playerSpeed, 1, 99, v -> playerSpeed = v, panelX, y, 1);
         y = addGamemodeCycle("游戏模式", gamemode, v -> gamemode = v, panelX, y, 1);
         y = addIntInput("最大生命值", maxHealth, 1, 9999, v -> maxHealth = v, panelX, y, 1);
 
-        // 其他页
+        // 其他页（移除反作弊项）
         y = panelY + 10;
-        y = addToggle("内存字段保护", memoryFieldProtection, v -> memoryFieldProtection = v, panelX, y, 2);
-        y = addToggle("防作弊保护", antiCheatProtection, v -> antiCheatProtection = v, panelX, y, 2);
-        y = addToggle("反作弊增强", antiCheatEnhanced, v -> antiCheatEnhanced = v, panelX, y, 2);
         y = addToggle("经验吸收", expAbsorption, v -> expAbsorption = v, panelX, y, 2);
         y = addToggle("冰冻模式", freezeMode, v -> freezeMode = v, panelX, y, 2);
         y = addToggle("治疗模式", healMode, v -> healMode = v, panelX, y, 2);
@@ -160,17 +153,10 @@ public class RainbowSettingsScreen extends Screen {
 
         allowFlight = nbt.getBoolean("AllowFlight");
         immuneDamage = nbt.getBoolean("ImmuneDamage");
-        protectAndEncryptNbt = nbt.getBoolean("ProtectAndEncryptNbt");
-        verifyProtection = nbt.getBoolean("VerifyProtection");
-        attackProtection = nbt.getBoolean("AttackProtection");
-        memoryProtection = nbt.getBoolean("MemoryProtection");
         playerSpeed = nbt.getInt("PlayerSpeed"); if (playerSpeed < 1) playerSpeed = 1;
         gamemode = nbt.getInt("Gamemode");
         maxHealth = nbt.getInt("MaxHealth"); if (maxHealth < 1) maxHealth = 20;
 
-        memoryFieldProtection = nbt.getBoolean("MemoryFieldProtection");
-        antiCheatProtection = nbt.getBoolean("AntiCheatProtection");
-        antiCheatEnhanced = nbt.getBoolean("AntiCheatEnhanced");
         expAbsorption = nbt.getBoolean("ExpAbsorption");
         freezeMode = nbt.getBoolean("FreezeMode");
         healMode = nbt.getBoolean("HealMode");
@@ -203,17 +189,10 @@ public class RainbowSettingsScreen extends Screen {
 
         nbt.putBoolean("AllowFlight", allowFlight);
         nbt.putBoolean("ImmuneDamage", immuneDamage);
-        nbt.putBoolean("ProtectAndEncryptNbt", protectAndEncryptNbt);
-        nbt.putBoolean("VerifyProtection", verifyProtection);
-        nbt.putBoolean("AttackProtection", attackProtection);
-        nbt.putBoolean("MemoryProtection", memoryProtection);
         nbt.putInt("PlayerSpeed", playerSpeed);
         nbt.putInt("Gamemode", gamemode);
         nbt.putInt("MaxHealth", maxHealth);
 
-        nbt.putBoolean("MemoryFieldProtection", memoryFieldProtection);
-        nbt.putBoolean("AntiCheatProtection", antiCheatProtection);
-        nbt.putBoolean("AntiCheatEnhanced", antiCheatEnhanced);
         nbt.putBoolean("ExpAbsorption", expAbsorption);
         nbt.putBoolean("FreezeMode", freezeMode);
         nbt.putBoolean("HealMode", healMode);
@@ -235,8 +214,8 @@ public class RainbowSettingsScreen extends Screen {
         int start = 0, end = 0;
         switch (activeTab) {
             case 0 -> { start = 0; end = 15; }
-            case 1 -> { start = 15; end = 15 + 9; }
-            case 2 -> { start = 15 + 9; end = allWidgets.size(); }
+            case 1 -> { start = 15; end = 15 + 5; }
+            case 2 -> { start = 15 + 5; end = allWidgets.size(); }
         }
         for (int i = start; i < end; i++) allWidgets.get(i).visible = true;
     }
@@ -336,21 +315,6 @@ public class RainbowSettingsScreen extends Screen {
         context.fill(0, 40, width, 41, 0xFF222222);
 
         int panelX = 20;
-        int panelY = 60;
-        int panelWidth = width - 40;
-        int panelHeight = height - 100;
-
-        context.fill(panelX - 6, panelY - 6, panelX + panelWidth + 6, panelY + panelHeight + 6, 0xAA000000);
-        context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xFF101010);
-        context.fill(panelX + panelWidth - 8, panelY, panelX + panelWidth, panelY + panelHeight, 0x55000000);
-
-        if (scrollPanel.getContentHeight() > panelHeight) {
-            int maxScroll = Math.max(1, scrollPanel.getContentHeight() - panelHeight);
-            int thumbHeight = Math.max(24, panelHeight * panelHeight / scrollPanel.getContentHeight());
-            int thumbY = panelY + (int) ((double) scrollPanel.getScrollY() / maxScroll * (panelHeight - thumbHeight));
-            context.fill(panelX + panelWidth - 8, thumbY, panelX + panelWidth, thumbY + thumbHeight, 0xFF8888FF);
-        }
-
         int baseY = 60;
         if (activeTab == 0) {
             drawLabel(context, "修改NBT", panelX, baseY + 10);
@@ -371,25 +335,18 @@ public class RainbowSettingsScreen extends Screen {
         } else if (activeTab == 1) {
             drawLabel(context, "飞行", panelX, baseY + 10);
             drawLabel(context, "免疫伤害", panelX, baseY + 35);
-            drawLabel(context, "保护并加密NBT", panelX, baseY + 60);
-            drawLabel(context, "验证保护机制", panelX, baseY + 85);
-            drawLabel(context, "攻击保护", panelX, baseY + 110);
-            drawLabel(context, "内存保护", panelX, baseY + 135);
-            drawLabel(context, "人物速度", panelX, baseY + 160);
-            drawLabel(context, "游戏模式", panelX, baseY + 185);
-            drawLabel(context, "最大生命值", panelX, baseY + 210);
+            drawLabel(context, "人物速度", panelX, baseY + 60);
+            drawLabel(context, "游戏模式", panelX, baseY + 85);
+            drawLabel(context, "最大生命值", panelX, baseY + 110);
         } else if (activeTab == 2) {
-            drawLabel(context, "内存字段保护", panelX, baseY + 10);
-            drawLabel(context, "防作弊保护", panelX, baseY + 35);
-            drawLabel(context, "反作弊增强", panelX, baseY + 60);
-            drawLabel(context, "经验吸收", panelX, baseY + 85);
-            drawLabel(context, "冰冻模式", panelX, baseY + 110);
-            drawLabel(context, "治疗模式", panelX, baseY + 135);
-            drawLabel(context, "治疗范围", panelX, baseY + 160);
-            drawLabel(context, "剑气模式", panelX, baseY + 185);
-            drawLabel(context, "剑气持续(秒)", panelX, baseY + 210);
-            drawLabel(context, "剑气伤害", panelX, baseY + 235);
-            drawLabel(context, "挖掘等级", panelX, baseY + 260);
+            drawLabel(context, "经验吸收", panelX, baseY + 10);
+            drawLabel(context, "冰冻模式", panelX, baseY + 35);
+            drawLabel(context, "治疗模式", panelX, baseY + 60);
+            drawLabel(context, "治疗范围", panelX, baseY + 85);
+            drawLabel(context, "剑气模式", panelX, baseY + 110);
+            drawLabel(context, "剑气持续(秒)", panelX, baseY + 135);
+            drawLabel(context, "剑气伤害", panelX, baseY + 160);
+            drawLabel(context, "挖掘等级", panelX, baseY + 185);
         }
 
         super.render(context, mouseX, mouseY, delta);
@@ -431,7 +388,6 @@ public class RainbowSettingsScreen extends Screen {
     @Override
     public boolean shouldPause() { return false; }
 
-    // 滚动面板
     private class ScrollablePanel implements net.minecraft.client.gui.Drawable, Element, Selectable {
         private final int x, y, width, height;
         private final List<ClickableWidget> children = new ArrayList<>();
@@ -447,13 +403,8 @@ public class RainbowSettingsScreen extends Screen {
             contentHeight = Math.max(contentHeight, child.getY() + child.getHeight());
         }
 
-        public int getContentHeight() {
-            return contentHeight;
-        }
-
-        public int getScrollY() {
-            return scrollY;
-        }
+        public int getContentHeight() { return contentHeight; }
+        public int getScrollY() { return scrollY; }
 
         @Override
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
