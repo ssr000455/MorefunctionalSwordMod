@@ -39,6 +39,7 @@ public class RainbowSettingsScreen extends Screen {
     private boolean modifyNbt, removeEntity, removeEntityData, rangeAttack, fieldReflection, continuousAttack, lightningAttack, fireAttack, explosionAttack;
     private int attackRange = 16, continuousAttackTime = 100, lightningCount = 1, explosionRadius = 2;
     private float baseDamage = 999999f;
+    private boolean infiniteDamage = true;
 
     private boolean allowFlight, immuneDamage, protectAndEncryptNbt, verifyProtection, attackProtection, memoryProtection;
     private int playerSpeed = 1, gamemode = 0, maxHealth = 20;
@@ -73,13 +74,14 @@ public class RainbowSettingsScreen extends Screen {
         addDrawableChild(scrollPanel);
 
         // 攻击页
-        int y = 10;
+        int y = panelY + 10;
         y = addToggle("修改NBT", modifyNbt, v -> modifyNbt = v, panelX, y, 0);
         y = addToggle("移除实体", removeEntity, v -> removeEntity = v, panelX, y, 0);
         y = addToggle("移除实体数据", removeEntityData, v -> removeEntityData = v, panelX, y, 0);
         y = addToggle("范围攻击", rangeAttack, v -> rangeAttack = v, panelX, y, 0);
         y = addIntInput("攻击范围", attackRange, 1, 256, v -> attackRange = v, panelX, y, 0);
         y = addToggle("字段反射", fieldReflection, v -> fieldReflection = v, panelX, y, 0);
+        y = addToggle("无限伤害", infiniteDamage, v -> infiniteDamage = v, panelX, y, 0);
         y = addFloatInput("基础伤害", baseDamage, 1f, 99999999f, v -> baseDamage = v, panelX, y, 0);
         y = addToggle("持续攻击生物", continuousAttack, v -> continuousAttack = v, panelX, y, 0);
         y = addIntInput("攻击时间(刻)", continuousAttackTime, 1, 9999, v -> continuousAttackTime = v, panelX, y, 0);
@@ -90,7 +92,7 @@ public class RainbowSettingsScreen extends Screen {
         y = addIntInput("爆炸半径", explosionRadius, 1, 10, v -> explosionRadius = v, panelX, y, 0);
 
         // 保护页
-        y = 10;
+        y = panelY + 10;
         y = addToggle("飞行", allowFlight, v -> allowFlight = v, panelX, y, 1);
         y = addToggle("免疫伤害", immuneDamage, v -> immuneDamage = v, panelX, y, 1);
         y = addToggle("保护并加密NBT", protectAndEncryptNbt, v -> protectAndEncryptNbt = v, panelX, y, 1);
@@ -102,7 +104,7 @@ public class RainbowSettingsScreen extends Screen {
         y = addIntInput("最大生命值", maxHealth, 1, 9999, v -> maxHealth = v, panelX, y, 1);
 
         // 其他页
-        y = 10;
+        y = panelY + 10;
         y = addToggle("内存字段保护", memoryFieldProtection, v -> memoryFieldProtection = v, panelX, y, 2);
         y = addToggle("防作弊保护", antiCheatProtection, v -> antiCheatProtection = v, panelX, y, 2);
         y = addToggle("反作弊增强", antiCheatEnhanced, v -> antiCheatEnhanced = v, panelX, y, 2);
@@ -146,7 +148,8 @@ public class RainbowSettingsScreen extends Screen {
         rangeAttack = nbt.getBoolean("RangeAttack");
         attackRange = nbt.getInt("AttackRange"); if (attackRange <= 0) attackRange = 16;
         fieldReflection = nbt.getBoolean("FieldReflection");
-        baseDamage = nbt.getFloat("BaseDamage"); if (baseDamage <= 0) baseDamage = 999999f;
+        baseDamage = nbt.getFloat("BaseDamage"); if (baseDamage <= 0 && !Float.isInfinite(baseDamage)) baseDamage = 999999f;
+        infiniteDamage = Float.isInfinite(baseDamage);
         continuousAttack = nbt.getBoolean("ContinuousAttack");
         continuousAttackTime = nbt.getInt("ContinuousAttackTime"); if (continuousAttackTime <= 0) continuousAttackTime = 100;
         lightningAttack = nbt.getBoolean("LightningAttack");
@@ -185,7 +188,11 @@ public class RainbowSettingsScreen extends Screen {
         nbt.putBoolean("RangeAttack", rangeAttack);
         nbt.putInt("AttackRange", attackRange);
         nbt.putBoolean("FieldReflection", fieldReflection);
-        nbt.putFloat("BaseDamage", baseDamage);
+        if (infiniteDamage) {
+            nbt.putFloat("BaseDamage", Float.POSITIVE_INFINITY);
+        } else {
+            nbt.putFloat("BaseDamage", baseDamage);
+        }
         nbt.putBoolean("ContinuousAttack", continuousAttack);
         nbt.putInt("ContinuousAttackTime", continuousAttackTime);
         nbt.putBoolean("LightningAttack", lightningAttack);
@@ -227,9 +234,9 @@ public class RainbowSettingsScreen extends Screen {
         for (ClickableWidget w : allWidgets) w.visible = false;
         int start = 0, end = 0;
         switch (activeTab) {
-            case 0 -> { start = 0; end = 14; }
-            case 1 -> { start = 14; end = 14 + 9; }
-            case 2 -> { start = 14 + 9; end = allWidgets.size(); }
+            case 0 -> { start = 0; end = 15; }
+            case 1 -> { start = 15; end = 15 + 9; }
+            case 2 -> { start = 15 + 9; end = allWidgets.size(); }
         }
         for (int i = start; i < end; i++) allWidgets.get(i).visible = true;
     }
@@ -287,14 +294,21 @@ public class RainbowSettingsScreen extends Screen {
 
     private int addFloatInput(String label, float defaultValue, float min, float max, Consumer<Float> setter, int x, int y, int tabId) {
         TextFieldWidget tf = new TextFieldWidget(textRenderer, x + 100, y, 60, 20, Text.literal(""));
-        tf.setText(String.valueOf(defaultValue));
+        tf.setText(Float.isInfinite(defaultValue) ? "infinity" : String.valueOf(defaultValue));
         tf.setChangedListener(t -> {
             try {
-                float val = Float.parseFloat(t);
-                if (val < min) val = min;
-                if (val > max) val = max;
+                float val;
+                if (t.equalsIgnoreCase("infinity") || t.equalsIgnoreCase("inf")) {
+                    val = Float.POSITIVE_INFINITY;
+                    infiniteDamage = true;
+                } else {
+                    val = Float.parseFloat(t);
+                    if (val < min) val = min;
+                    if (val > max) val = max;
+                    infiniteDamage = false;
+                }
                 setter.accept(val);
-                tf.setText(String.valueOf(val));
+                tf.setText(Float.isInfinite(val) ? "infinity" : String.valueOf(val));
             } catch (Exception e) {}
         });
         allWidgets.add(tf);
@@ -317,11 +331,26 @@ public class RainbowSettingsScreen extends Screen {
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         renderBackground(context);
-        context.fill(0, 0, width, 40, 0x88000000);
+        context.fill(0, 0, width, 40, 0xCC000000);
         context.drawCenteredTextWithShadow(textRenderer, this.title, width / 2, 15, 0xFFFFFF);
-        context.fill(0, 40, width, 41, 0xFFFFFFFF);
+        context.fill(0, 40, width, 41, 0xFF222222);
 
         int panelX = 20;
+        int panelY = 60;
+        int panelWidth = width - 40;
+        int panelHeight = height - 100;
+
+        context.fill(panelX - 6, panelY - 6, panelX + panelWidth + 6, panelY + panelHeight + 6, 0xAA000000);
+        context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xFF101010);
+        context.fill(panelX + panelWidth - 8, panelY, panelX + panelWidth, panelY + panelHeight, 0x55000000);
+
+        if (scrollPanel.getContentHeight() > panelHeight) {
+            int maxScroll = Math.max(1, scrollPanel.getContentHeight() - panelHeight);
+            int thumbHeight = Math.max(24, panelHeight * panelHeight / scrollPanel.getContentHeight());
+            int thumbY = panelY + (int) ((double) scrollPanel.getScrollY() / maxScroll * (panelHeight - thumbHeight));
+            context.fill(panelX + panelWidth - 8, thumbY, panelX + panelWidth, thumbY + thumbHeight, 0xFF8888FF);
+        }
+
         int baseY = 60;
         if (activeTab == 0) {
             drawLabel(context, "修改NBT", panelX, baseY + 10);
@@ -330,14 +359,15 @@ public class RainbowSettingsScreen extends Screen {
             drawLabel(context, "范围攻击", panelX, baseY + 85);
             drawLabel(context, "攻击范围", panelX, baseY + 110);
             drawLabel(context, "字段反射", panelX, baseY + 135);
-            drawLabel(context, "基础伤害", panelX, baseY + 160);
-            drawLabel(context, "持续攻击生物", panelX, baseY + 185);
-            drawLabel(context, "攻击时间(刻)", panelX, baseY + 210);
-            drawLabel(context, "攻击带闪电", panelX, baseY + 235);
-            drawLabel(context, "闪电数量", panelX, baseY + 260);
-            drawLabel(context, "攻击带火焰", panelX, baseY + 285);
-            drawLabel(context, "攻击带爆炸", panelX, baseY + 310);
-            drawLabel(context, "爆炸半径", panelX, baseY + 335);
+            drawLabel(context, "无限伤害", panelX, baseY + 160);
+            drawLabel(context, "基础伤害", panelX, baseY + 185);
+            drawLabel(context, "持续攻击生物", panelX, baseY + 210);
+            drawLabel(context, "攻击时间(刻)", panelX, baseY + 235);
+            drawLabel(context, "攻击带闪电", panelX, baseY + 260);
+            drawLabel(context, "闪电数量", panelX, baseY + 285);
+            drawLabel(context, "攻击带火焰", panelX, baseY + 310);
+            drawLabel(context, "攻击带爆炸", panelX, baseY + 335);
+            drawLabel(context, "爆炸半径", panelX, baseY + 360);
         } else if (activeTab == 1) {
             drawLabel(context, "飞行", panelX, baseY + 10);
             drawLabel(context, "免疫伤害", panelX, baseY + 35);
@@ -366,11 +396,36 @@ public class RainbowSettingsScreen extends Screen {
     }
 
     @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (scrollPanel.mouseClicked(mouseX, mouseY, button)) return true;
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (scrollPanel.mouseReleased(mouseX, mouseY, button)) return true;
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        if (scrollPanel.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)) return true;
+        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    }
+
+    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
-        if (scrollPanel.isMouseOver(mouseX, mouseY)) {
-            return scrollPanel.mouseScrolled(mouseX, mouseY, amount);
-        }
+        if (scrollPanel.mouseScrolled(mouseX, mouseY, amount)) return true;
         return super.mouseScrolled(mouseX, mouseY, amount);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == 256) {
+            close();
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
@@ -390,6 +445,14 @@ public class RainbowSettingsScreen extends Screen {
         public void addChild(ClickableWidget child) {
             children.add(child);
             contentHeight = Math.max(contentHeight, child.getY() + child.getHeight());
+        }
+
+        public int getContentHeight() {
+            return contentHeight;
+        }
+
+        public int getScrollY() {
+            return scrollY;
         }
 
         @Override

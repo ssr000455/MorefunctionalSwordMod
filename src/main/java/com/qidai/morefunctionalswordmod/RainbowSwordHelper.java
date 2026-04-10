@@ -23,9 +23,9 @@ public class RainbowSwordHelper {
                        nbt.getFloat("BaseDamage") +
                        nbt.getInt("AttackRange");
             var digest = MessageDigest.getInstance("SHA-256");
-            var hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
-            var hex = new StringBuilder();
-            for (var b : hash) hex.append(String.format("%02x", b));
+            byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder();
+            for (byte b : hash) hex.append(String.format("%02x", b));
             return hex.toString();
         } catch (Exception e) {
             return "";
