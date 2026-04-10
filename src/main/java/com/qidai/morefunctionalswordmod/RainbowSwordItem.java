@@ -3,8 +3,10 @@ package com.qidai.morefunctionalswordmod;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
@@ -31,7 +33,11 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 import java.lang.reflect.Field;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
+import java.util.Set;
 import java.util.UUID;
 
 public class RainbowSwordItem extends SwordItem {
@@ -118,6 +124,7 @@ public class RainbowSwordItem extends SwordItem {
         int swordWaveDuration;
         float swordWaveDamage;
         int swordWaveMiningLevel;
+        int miningRange;
     }
 
     private AttackConfig loadConfig(ItemStack stack) {
@@ -175,27 +182,33 @@ public class RainbowSwordItem extends SwordItem {
         cfg.swordWaveMiningLevel = nbt.contains("SwordWaveMiningLevel") ? nbt.getInt("SwordWaveMiningLevel") : 0;
         if (cfg.swordWaveMiningLevel < 0) cfg.swordWaveMiningLevel = 0;
         if (cfg.swordWaveMiningLevel > 99) cfg.swordWaveMiningLevel = 99;
+        cfg.miningRange = nbt.contains("MiningRange") ? nbt.getInt("MiningRange") : 5;
+        if (cfg.miningRange <= 0) cfg.miningRange = 5;
+        if (cfg.miningRange > 10) cfg.miningRange = 10;
         return cfg;
     }
 
     private void killEntity(Entity target, AttackConfig cfg) {
         if (target == null || target.isRemoved()) return;
         if (cfg.removeEntity) target.remove(Entity.RemovalReason.DISCARDED);
-        if (cfg.removeEntityData && target instanceof LivingEntity living) {
+        if (cfg.removeEntityData && target instanceof LivingEntity) {
+            LivingEntity living = (LivingEntity) target;
             living.writeNbt(new NbtCompound());
         }
         if (cfg.modifyNbt && target instanceof LivingEntity) {
             target.writeNbt(new NbtCompound());
             ((LivingEntity) target).getActiveStatusEffects().clear();
         }
-        if (cfg.fieldReflection && target instanceof LivingEntity living) {
+        if (cfg.fieldReflection && target instanceof LivingEntity) {
+            LivingEntity living = (LivingEntity) target;
             try {
                 Field healthField = LivingEntity.class.getDeclaredField("health");
                 healthField.setAccessible(true);
                 healthField.setFloat(living, 0);
             } catch (Exception ignored) {}
         }
-        if (!target.isRemoved() && target instanceof LivingEntity living && living.getHealth() > 0) {
+        if (!target.isRemoved() && target instanceof LivingEntity && ((LivingEntity) target).getHealth() > 0) {
+            LivingEntity living = (LivingEntity) target;
             living.setHealth(0);
         }
     }
@@ -274,7 +287,8 @@ public class RainbowSwordItem extends SwordItem {
 
     @Override
     public void inventoryTick(ItemStack stack, World world, Entity entity, int slot, boolean selected) {
-        if (world.isClient || !(entity instanceof ServerPlayerEntity player)) return;
+        if (world.isClient || !(entity instanceof ServerPlayerEntity)) return;
+        ServerPlayerEntity player = (ServerPlayerEntity) entity;
         if (!RainbowSwordHelper.verify(player, stack)) RainbowSwordHelper.rollback(player, stack);
         RainbowSwordHelper.backup(player, stack);
         var nbt = stack.getOrCreateNbt();
@@ -315,7 +329,8 @@ public class RainbowSwordItem extends SwordItem {
     public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
         ItemStack stack = user.getStackInHand(hand);
         if (world.isClient || hand != Hand.MAIN_HAND) return TypedActionResult.pass(stack);
-        if (!(user instanceof ServerPlayerEntity player)) return TypedActionResult.pass(stack);
+        if (!(user instanceof ServerPlayerEntity)) return TypedActionResult.pass(stack);
+        ServerPlayerEntity player = (ServerPlayerEntity) user;
 
         NbtCompound nbt = stack.getOrCreateNbt();
 
@@ -323,7 +338,8 @@ public class RainbowSwordItem extends SwordItem {
             var hitResult = player.raycast(5.0, 0.0f, false);
             if (hitResult.getType() == HitResult.Type.ENTITY) {
                 var target = ((net.minecraft.util.hit.EntityHitResult) hitResult).getEntity();
-                if (target instanceof LivingEntity living) {
+                if (target instanceof LivingEntity) {
+                    LivingEntity living = (LivingEntity) target;
                     living.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 200, 255, false, false, true));
                     living.addStatusEffect(new StatusEffectInstance(StatusEffects.MINING_FATIGUE, 200, 255, false, false, true));
                     player.sendMessage(Text.literal("已冻结 " + target.getName().getString()).formatted(Formatting.AQUA), true);
@@ -382,7 +398,8 @@ public class RainbowSwordItem extends SwordItem {
 
     @Override
     public void onStoppedUsing(ItemStack stack, World world, LivingEntity user, int remainingUseTicks) {
-        if (world.isClient || !(user instanceof ServerPlayerEntity player)) return;
+        if (world.isClient || !(user instanceof ServerPlayerEntity)) return;
+        ServerPlayerEntity player = (ServerPlayerEntity) user;
         if (!ModUtil.hasContract(stack)) return;
 
         int useTime = getMaxUseTime(stack) - remainingUseTicks;
@@ -414,7 +431,8 @@ public class RainbowSwordItem extends SwordItem {
 
     @Override
     public boolean postHit(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-        if (attacker.getWorld().isClient || !(attacker instanceof ServerPlayerEntity player)) return true;
+        if (attacker.getWorld().isClient || !(attacker instanceof ServerPlayerEntity)) return true;
+        ServerPlayerEntity player = (ServerPlayerEntity) attacker;
         if (!ModUtil.hasContract(stack)) return super.postHit(stack, target, attacker);
 
         NbtCompound nbt = stack.getOrCreateNbt();
@@ -469,9 +487,14 @@ public class RainbowSwordItem extends SwordItem {
 
     @Override
     public boolean postMine(ItemStack stack, World world, BlockState state, BlockPos pos, LivingEntity miner) {
-        if (world.isClient || !(miner instanceof ServerPlayerEntity player)) return true;
+        if (world.isClient || !(miner instanceof ServerPlayerEntity)) return true;
+        ServerPlayerEntity player = (ServerPlayerEntity) miner;
         if (!ModUtil.hasContract(stack)) return true;
-        world.breakBlock(pos, true);
+
+        // 实现超级挖掘功能 - 神器无等级限制
+        AttackConfig cfg = loadConfig(stack);
+        performSuperMining(world, pos, state.getBlock(), player);
+
         return true;
     }
 
@@ -479,4 +502,88 @@ public class RainbowSwordItem extends SwordItem {
     @Override public float getMiningSpeedMultiplier(ItemStack stack, BlockState state) { return 9999f; }
     @Override public boolean isDamageable() { return false; }
     @Override public boolean hasGlint(ItemStack stack) { return true; }
+
+    private void performSuperMining(World world, BlockPos centerPos, net.minecraft.block.Block targetBlock, ServerPlayerEntity player) {
+        // 从配置中获取挖掘范围
+        AttackConfig cfg = loadConfig(player.getMainHandStack());
+        int range = cfg.miningRange;
+
+        // 检查是否是原木，实现伐木功能
+        if (isLogBlock(targetBlock)) {
+            performTreeFelling(world, centerPos, targetBlock, player);
+            return;
+        }
+
+        // 普通超级挖掘 - 神器可以破坏任何方块，包括基岩
+        for (int x = -range; x <= range; x++) {
+            for (int y = -range; y <= range; y++) {
+                for (int z = -range; z <= range; z++) {
+                    BlockPos currentPos = centerPos.add(x, y, z);
+                    BlockState currentState = world.getBlockState(currentPos);
+
+                    // 神器可以破坏任何方块（包括基岩）
+                    if (!world.isAir(currentPos)) {
+                        // 对于基岩，破坏并掉落基岩方块
+                        if (currentState.getBlock().getTranslationKey().contains("bedrock")) {
+                            world.setBlockState(currentPos, Blocks.AIR.getDefaultState(), 3);
+                            // 创建基岩方块掉落物
+                            ItemStack bedrockStack = new ItemStack(Blocks.BEDROCK.asItem());
+                            ItemEntity itemEntity = new ItemEntity(world, currentPos.getX() + 0.5, currentPos.getY() + 0.5, currentPos.getZ() + 0.5, bedrockStack);
+                            world.spawnEntity(itemEntity);
+                        } else {
+                            world.breakBlock(currentPos, true);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean isLogBlock(net.minecraft.block.Block block) {
+        String blockName = block.toString().toLowerCase();
+        return blockName.contains("log") || blockName.contains("wood") || blockName.contains("stem");
+    }
+
+    private void performTreeFelling(World world, BlockPos startPos, net.minecraft.block.Block logBlock, ServerPlayerEntity player) {
+        java.util.Set<BlockPos> toBreak = new java.util.HashSet<>();
+        java.util.Set<BlockPos> visited = new java.util.HashSet<>();
+        java.util.Queue<BlockPos> queue = new java.util.LinkedList<>();
+
+        queue.add(startPos);
+        visited.add(startPos);
+
+        // BFS搜索整棵树 - 神器无限制
+        while (!queue.isEmpty()) {
+            BlockPos current = queue.poll();
+            toBreak.add(current);
+
+            // 检查6个方向的相邻方块
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        if (dx == 0 && dy == 0 && dz == 0) continue;
+
+                        BlockPos neighbor = current.add(dx, dy, dz);
+                        if (!visited.contains(neighbor)) {
+                            visited.add(neighbor);
+                            BlockState neighborState = world.getBlockState(neighbor);
+                            if (neighborState.getBlock() == logBlock || isLogBlock(neighborState.getBlock())) {
+                                queue.add(neighbor);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 破坏所有找到的原木
+        for (BlockPos pos : toBreak) {
+            world.breakBlock(pos, true);
+        }
+    }
+
+    private boolean isLogBlock(net.minecraft.block.Block block) {
+        String blockName = block.toString().toLowerCase();
+        return blockName.contains("log") || blockName.contains("wood") || blockName.contains("stem");
+    }
 }

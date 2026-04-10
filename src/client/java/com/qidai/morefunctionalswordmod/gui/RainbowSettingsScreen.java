@@ -45,7 +45,7 @@ public class RainbowSettingsScreen extends Screen {
     private int playerSpeed = 1, gamemode = 0, maxHealth = 20;
 
     private boolean memoryFieldProtection, antiCheatProtection, antiCheatEnhanced, expAbsorption, freezeMode, healMode, swordWaveMode;
-    private int healRange = 3, swordWaveDuration = 5, swordWaveMiningLevel = 0;
+    private int healRange = 3, swordWaveDuration = 5, swordWaveMiningLevel = 0, miningRange = 5;
     private float swordWaveDamage = 999999f;
 
     private int activeTab = 0;
@@ -70,7 +70,7 @@ public class RainbowSettingsScreen extends Screen {
         int panelY = 60;
         int panelWidth = width - 40;
         int panelHeight = height - 100;
-        scrollPanel = new ScrollablePanel(panelX, panelY, panelWidth, panelHeight);
+        scrollPanel = new ScrollablePanel(this, panelX, panelY, panelWidth, panelHeight);
         addDrawableChild(scrollPanel);
 
         // 攻击页
@@ -116,6 +116,7 @@ public class RainbowSettingsScreen extends Screen {
         y = addIntInput("剑气持续(秒)", swordWaveDuration, 1, 60, v -> swordWaveDuration = v, panelX, y, 2);
         y = addFloatInput("剑气伤害", swordWaveDamage, 1f, 9999999f, v -> swordWaveDamage = v, panelX, y, 2);
         y = addIntInput("挖掘等级", swordWaveMiningLevel, 0, 99, v -> swordWaveMiningLevel = v, panelX, y, 2);
+        y = addIntInput("挖掘范围", miningRange, 1, 10, v -> miningRange = v, panelX, y, 2);
 
         for (ClickableWidget w : allWidgets) w.visible = false;
 
@@ -179,6 +180,7 @@ public class RainbowSettingsScreen extends Screen {
         swordWaveDuration = nbt.getInt("SwordWaveDuration"); if (swordWaveDuration <= 0) swordWaveDuration = 5;
         swordWaveDamage = nbt.getFloat("SwordWaveDamage"); if (swordWaveDamage <= 0) swordWaveDamage = 999999f;
         swordWaveMiningLevel = nbt.getInt("SwordWaveMiningLevel");
+        miningRange = nbt.getInt("MiningRange"); if (miningRange <= 0) miningRange = 5;
     }
 
     private void saveSettings() {
@@ -222,6 +224,7 @@ public class RainbowSettingsScreen extends Screen {
         nbt.putInt("SwordWaveDuration", swordWaveDuration);
         nbt.putFloat("SwordWaveDamage", swordWaveDamage);
         nbt.putInt("SwordWaveMiningLevel", swordWaveMiningLevel);
+        nbt.putInt("MiningRange", miningRange);
 
         RainbowSwordHelper.update(player, swordStack);
         var buf = PacketByteBufs.create();
@@ -234,9 +237,18 @@ public class RainbowSettingsScreen extends Screen {
         for (ClickableWidget w : allWidgets) w.visible = false;
         int start = 0, end = 0;
         switch (activeTab) {
-            case 0 -> { start = 0; end = 15; }
-            case 1 -> { start = 15; end = 15 + 9; }
-            case 2 -> { start = 15 + 9; end = allWidgets.size(); }
+            case 0:
+                start = 0;
+                end = 15;
+                break;
+            case 1:
+                start = 15;
+                end = 15 + 9;
+                break;
+            case 2:
+                start = 15 + 9;
+                end = allWidgets.size();
+                break;
         }
         for (int i = start; i < end; i++) allWidgets.get(i).visible = true;
     }
@@ -246,6 +258,7 @@ public class RainbowSettingsScreen extends Screen {
     }
 
     private int addToggle(String label, boolean initial, Consumer<Boolean> setter, int x, int y, int tabId) {
+        scrollPanel.addLabel(label, 0, y - 60);
         ButtonWidget btn = ButtonWidget.builder(Text.literal(initial ? "是" : "否"), b -> {
             boolean newVal = b.getMessage().getString().equals("否");
             setter.accept(newVal);
@@ -257,6 +270,7 @@ public class RainbowSettingsScreen extends Screen {
     }
 
     private int addIntInput(String label, int defaultValue, int min, int max, Consumer<Integer> setter, int x, int y, int tabId) {
+        scrollPanel.addLabel(label, 0, y - 60);
         TextFieldWidget tf = new TextFieldWidget(textRenderer, x + 100, y, 60, 20, Text.literal(""));
         tf.setText(String.valueOf(defaultValue));
         tf.setChangedListener(t -> {
@@ -274,6 +288,7 @@ public class RainbowSettingsScreen extends Screen {
     }
 
     private int addIntInputWithConfirm(String label, int defaultValue, int min, int max, Consumer<Integer> setter, int x, int y, int tabId) {
+        scrollPanel.addLabel(label, 0, y - 60);
         TextFieldWidget tf = new TextFieldWidget(textRenderer, x + 100, y, 50, 20, Text.literal(""));
         tf.setText(String.valueOf(defaultValue));
         int[] pending = {defaultValue};
@@ -293,6 +308,7 @@ public class RainbowSettingsScreen extends Screen {
     }
 
     private int addFloatInput(String label, float defaultValue, float min, float max, Consumer<Float> setter, int x, int y, int tabId) {
+        scrollPanel.addLabel(label, 0, y - 60);
         TextFieldWidget tf = new TextFieldWidget(textRenderer, x + 100, y, 60, 20, Text.literal(""));
         tf.setText(Float.isInfinite(defaultValue) ? "infinity" : String.valueOf(defaultValue));
         tf.setChangedListener(t -> {
@@ -317,6 +333,7 @@ public class RainbowSettingsScreen extends Screen {
     }
 
     private int addGamemodeCycle(String label, int current, Consumer<Integer> setter, int x, int y, int tabId) {
+        scrollPanel.addLabel(label, 0, y - 60);
         String[] modes = {"生存模式", "创造模式", "冒险模式", "旁观模式"};
         ButtonWidget cycle = ButtonWidget.builder(Text.literal(modes[current]), b -> {
             int newVal = (gamemode + 1) % 4;
@@ -353,43 +370,11 @@ public class RainbowSettingsScreen extends Screen {
 
         int baseY = 60;
         if (activeTab == 0) {
-            drawLabel(context, "修改NBT", panelX, baseY + 10);
-            drawLabel(context, "移除实体", panelX, baseY + 35);
-            drawLabel(context, "移除实体数据", panelX, baseY + 60);
-            drawLabel(context, "范围攻击", panelX, baseY + 85);
-            drawLabel(context, "攻击范围", panelX, baseY + 110);
-            drawLabel(context, "字段反射", panelX, baseY + 135);
-            drawLabel(context, "无限伤害", panelX, baseY + 160);
-            drawLabel(context, "基础伤害", panelX, baseY + 185);
-            drawLabel(context, "持续攻击生物", panelX, baseY + 210);
-            drawLabel(context, "攻击时间(刻)", panelX, baseY + 235);
-            drawLabel(context, "攻击带闪电", panelX, baseY + 260);
-            drawLabel(context, "闪电数量", panelX, baseY + 285);
-            drawLabel(context, "攻击带火焰", panelX, baseY + 310);
-            drawLabel(context, "攻击带爆炸", panelX, baseY + 335);
-            drawLabel(context, "爆炸半径", panelX, baseY + 360);
+            // Labels are now handled by ScrollablePanel
         } else if (activeTab == 1) {
-            drawLabel(context, "飞行", panelX, baseY + 10);
-            drawLabel(context, "免疫伤害", panelX, baseY + 35);
-            drawLabel(context, "保护并加密NBT", panelX, baseY + 60);
-            drawLabel(context, "验证保护机制", panelX, baseY + 85);
-            drawLabel(context, "攻击保护", panelX, baseY + 110);
-            drawLabel(context, "内存保护", panelX, baseY + 135);
-            drawLabel(context, "人物速度", panelX, baseY + 160);
-            drawLabel(context, "游戏模式", panelX, baseY + 185);
-            drawLabel(context, "最大生命值", panelX, baseY + 210);
+            // Labels are now handled by ScrollablePanel
         } else if (activeTab == 2) {
-            drawLabel(context, "内存字段保护", panelX, baseY + 10);
-            drawLabel(context, "防作弊保护", panelX, baseY + 35);
-            drawLabel(context, "反作弊增强", panelX, baseY + 60);
-            drawLabel(context, "经验吸收", panelX, baseY + 85);
-            drawLabel(context, "冰冻模式", panelX, baseY + 110);
-            drawLabel(context, "治疗模式", panelX, baseY + 135);
-            drawLabel(context, "治疗范围", panelX, baseY + 160);
-            drawLabel(context, "剑气模式", panelX, baseY + 185);
-            drawLabel(context, "剑气持续(秒)", panelX, baseY + 210);
-            drawLabel(context, "剑气伤害", panelX, baseY + 235);
-            drawLabel(context, "挖掘等级", panelX, baseY + 260);
+            // Labels are now handled by ScrollablePanel
         }
 
         super.render(context, mouseX, mouseY, delta);
@@ -431,20 +416,38 @@ public class RainbowSettingsScreen extends Screen {
     @Override
     public boolean shouldPause() { return false; }
 
+    private static class Label {
+        String text;
+        int x, y;
+        Label(String text, int x, int y) {
+            this.text = text; this.x = x; this.y = y;
+        }
+    }
+
     // 滚动面板
     private class ScrollablePanel implements net.minecraft.client.gui.Drawable, Element, Selectable {
         private final int x, y, width, height;
         private final List<ClickableWidget> children = new ArrayList<>();
+        private final List<Label> labels = new ArrayList<>();
         private int scrollY = 0, contentHeight = 0;
         private boolean focused = false;
+        private boolean draggingScrollbar = false;
+        private int dragStartY = 0;
+        private final RainbowSettingsScreen screen;
 
-        public ScrollablePanel(int x, int y, int width, int height) {
+        public ScrollablePanel(RainbowSettingsScreen screen, int x, int y, int width, int height) {
+            this.screen = screen;
             this.x = x; this.y = y; this.width = width; this.height = height;
         }
 
         public void addChild(ClickableWidget child) {
             children.add(child);
             contentHeight = Math.max(contentHeight, child.getY() + child.getHeight());
+        }
+
+        public void addLabel(String text, int relX, int relY) {
+            labels.add(new Label(text, relX, relY));
+            contentHeight = Math.max(contentHeight, relY + 10);
         }
 
         public int getContentHeight() {
@@ -464,12 +467,28 @@ public class RainbowSettingsScreen extends Screen {
             for (ClickableWidget child : children) {
                 child.render(context, mouseX, mouseY + scrollY, delta);
             }
+            for (Label label : labels) {
+                context.drawTextWithShadow(screen.textRenderer, label.text, x + label.x, y + label.y, 0xFFFFFF);
+            }
             matrices.pop();
             context.disableScissor();
         }
 
         @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            if (contentHeight > height) {
+                int scrollbarX = x + width - 8;
+                if (mouseX >= scrollbarX && mouseX <= scrollbarX + 8) {
+                    int maxScroll = Math.max(1, contentHeight - height);
+                    int thumbHeight = Math.max(24, height * height / contentHeight);
+                    int thumbY = y + (int) ((double) scrollY / maxScroll * (height - thumbHeight));
+                    if (mouseY >= thumbY && mouseY <= thumbY + thumbHeight) {
+                        draggingScrollbar = true;
+                        dragStartY = (int) (mouseY - thumbY);
+                        return true;
+                    }
+                }
+            }
             if (!isMouseOver(mouseX, mouseY)) return false;
             double adjY = mouseY + scrollY;
             for (ClickableWidget child : children) {
@@ -481,6 +500,10 @@ public class RainbowSettingsScreen extends Screen {
 
         @Override
         public boolean mouseReleased(double mouseX, double mouseY, int button) {
+            if (draggingScrollbar) {
+                draggingScrollbar = false;
+                return true;
+            }
             if (!isMouseOver(mouseX, mouseY)) return false;
             double adjY = mouseY + scrollY;
             for (ClickableWidget child : children) {
@@ -492,6 +515,15 @@ public class RainbowSettingsScreen extends Screen {
 
         @Override
         public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+            if (draggingScrollbar) {
+                int maxScroll = Math.max(1, contentHeight - height);
+                int thumbHeight = Math.max(24, height * height / contentHeight);
+                int newThumbY = (int) mouseY - dragStartY;
+                int relativeY = newThumbY - y;
+                scrollY = (int) ((double) relativeY / (height - thumbHeight) * maxScroll);
+                scrollY = Math.max(0, Math.min(scrollY, maxScroll));
+                return true;
+            }
             if (!isMouseOver(mouseX, mouseY)) return false;
             double adjY = mouseY + scrollY;
             for (ClickableWidget child : children) {
@@ -508,14 +540,18 @@ public class RainbowSettingsScreen extends Screen {
             return true;
         }
 
+        @Override
         public boolean isMouseOver(double mouseX, double mouseY) {
             return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
         }
 
-        public List<? extends Element> children() { return children; }
+        @Override
         public boolean isFocused() { return focused; }
+        @Override
         public void setFocused(boolean focused) { this.focused = focused; }
+        @Override
         public SelectionType getType() { return SelectionType.NONE; }
+        @Override
         public void appendNarrations(NarrationMessageBuilder builder) {}
     }
 }
