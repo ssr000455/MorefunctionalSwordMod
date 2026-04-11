@@ -10,14 +10,11 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-
-import java.util.Random;
 
 public class CalamityWind extends AbstractCalamityEntity {
     private int dashCooldown = 0;
@@ -127,21 +124,20 @@ public class CalamityWind extends AbstractCalamityEntity {
     protected void dropEquipment(DamageSource source, int lootingMultiplier, boolean allowDrops) {
         super.dropEquipment(source, lootingMultiplier, allowDrops);
         if (!allowDrops) return;
-        Random rand = this.random;
-        // 随机掉落一种物品
-        int roll = rand.nextInt(4);
+        // 使用 Minecraft 的随机数生成器
+        int roll = this.random.nextInt(4);
         switch (roll) {
             case 0:
                 this.dropItem(ModRegistry.CALAMITY_WIND_ITEM, 1);
                 break;
             case 1:
-                this.dropItem(Items.ROTTEN_FLESH, 2 + rand.nextInt(4));
+                this.dropItem(Items.ROTTEN_FLESH, 2 + this.random.nextInt(4));
                 break;
             case 2:
                 this.dropItem(Items.NAME_TAG, 1);
                 break;
             case 3:
-                this.dropItem(ModRegistry.DEPLETED_RAINBOW_BLOCK_ITEM, 1 + rand.nextInt(3));
+                this.dropItem(ModRegistry.DEPLETED_RAINBOW_BLOCK_ITEM, 1 + this.random.nextInt(3));
                 break;
         }
     }
