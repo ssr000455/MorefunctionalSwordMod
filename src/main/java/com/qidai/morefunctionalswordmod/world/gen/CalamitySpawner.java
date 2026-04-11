@@ -11,12 +11,12 @@ import net.minecraft.world.Heightmap;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.BiomeKeys;
 import net.minecraft.registry.RegistryKey;
+import net.minecraft.world.GameRules;
 
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
-@SuppressWarnings("deprecation") // 忽略与生物群系键相关的弃用警告
 public class CalamitySpawner {
     private static final Set<RegistryKey<Biome>> ALLOWED_BIOMES = new HashSet<>();
     static {
@@ -27,9 +27,9 @@ public class CalamitySpawner {
         ALLOWED_BIOMES.add(BiomeKeys.SWAMP);
     }
 
-    private static final int CHECK_INTERVAL = 200;
-    private static final int TEAMS_PER_AREA_MIN = 1;
-    private static final int TEAMS_PER_AREA_MAX = 3;
+    private static final int CHECK_INTERVAL = 400; // 降低生成频率（原来200）
+    private static final int TEAMS_PER_AREA_MIN = 0; // 最少0队，不强制生成
+    private static final int TEAMS_PER_AREA_MAX = 1; // 最多1队
 
     private static final Random RANDOM = new Random();
 
@@ -37,6 +37,10 @@ public class CalamitySpawner {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             for (ServerWorld world : server.getWorlds()) {
                 if (world.getRegistryKey() == net.minecraft.world.World.OVERWORLD) {
+                    // 检查游戏规则 doMobSpawning
+                    if (!world.getGameRules().getBoolean(GameRules.DO_MOB_SPAWNING)) {
+                        continue;
+                    }
                     tick(world);
                 }
             }
@@ -51,9 +55,9 @@ public class CalamitySpawner {
             BlockPos playerPos = player.getBlockPos();
             ChunkPos centerChunk = new ChunkPos(playerPos);
 
-            for (int dx = -5; dx <= 5; dx++) {
-                for (int dz = -5; dz <= 5; dz++) {
-                    if (RANDOM.nextFloat() < 0.02) {
+            for (int dx = -3; dx <= 3; dx++) { // 缩小范围
+                for (int dz = -3; dz <= 3; dz++) {
+                    if (RANDOM.nextFloat() < 0.01) { // 降低概率
                         ChunkPos chunk = new ChunkPos(centerChunk.x + dx, centerChunk.z + dz);
                         trySpawnTeamInChunk(world, chunk);
                     }
@@ -86,13 +90,14 @@ public class CalamitySpawner {
         leader.initialize(world, world.getLocalDifficulty(pos), SpawnReason.NATURAL, null, null);
         world.spawnEntityAndPassengers(leader);
 
-        int wraithCount = 5 + RANDOM.nextInt(6);
-        int soldierCount = 1 + RANDOM.nextInt(3);
-        int phantomCount = 3 + RANDOM.nextInt(3);
+        // 减少数量
+        int wraithCount = 1 + RANDOM.nextInt(3);
+        int soldierCount = RANDOM.nextInt(2);
+        int phantomCount = 1 + RANDOM.nextInt(2);
 
         for (int i = 0; i < wraithCount; i++) {
             CalamityWraith wraith = new CalamityWraith(ModEntities.CALAMITY_WRAITH, world);
-            BlockPos offset = pos.add(RANDOM.nextInt(5) - 2, 0, RANDOM.nextInt(5) - 2);
+            BlockPos offset = pos.add(RANDOM.nextInt(3) - 1, 0, RANDOM.nextInt(3) - 1);
             wraith.setPosition(offset.getX(), world.getTopY(Heightmap.Type.WORLD_SURFACE, offset.getX(), offset.getZ()), offset.getZ());
             wraith.initialize(world, world.getLocalDifficulty(offset), SpawnReason.NATURAL, null, null);
             world.spawnEntityAndPassengers(wraith);
@@ -100,7 +105,7 @@ public class CalamitySpawner {
 
         for (int i = 0; i < soldierCount; i++) {
             CalamitySoldier soldier = new CalamitySoldier(ModEntities.CALAMITY_SOLDIER, world);
-            BlockPos offset = pos.add(RANDOM.nextInt(5) - 2, 0, RANDOM.nextInt(5) - 2);
+            BlockPos offset = pos.add(RANDOM.nextInt(3) - 1, 0, RANDOM.nextInt(3) - 1);
             soldier.setPosition(offset.getX(), world.getTopY(Heightmap.Type.WORLD_SURFACE, offset.getX(), offset.getZ()), offset.getZ());
             soldier.initialize(world, world.getLocalDifficulty(offset), SpawnReason.NATURAL, null, null);
             world.spawnEntityAndPassengers(soldier);
@@ -108,7 +113,7 @@ public class CalamitySpawner {
 
         for (int i = 0; i < phantomCount; i++) {
             CalamityPhantom phantom = new CalamityPhantom(ModEntities.CALAMITY_PHANTOM, world);
-            BlockPos offset = pos.add(RANDOM.nextInt(5) - 2, 2 + RANDOM.nextInt(3), RANDOM.nextInt(5) - 2);
+            BlockPos offset = pos.add(RANDOM.nextInt(3) - 1, 2 + RANDOM.nextInt(2), RANDOM.nextInt(3) - 1);
             phantom.setPosition(offset.getX(), offset.getY(), offset.getZ());
             phantom.initialize(world, world.getLocalDifficulty(offset), SpawnReason.NATURAL, null, null);
             world.spawnEntityAndPassengers(phantom);

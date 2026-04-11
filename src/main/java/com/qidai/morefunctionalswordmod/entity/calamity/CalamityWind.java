@@ -10,11 +10,14 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+
+import java.util.Random;
 
 public class CalamityWind extends AbstractCalamityEntity {
     private int dashCooldown = 0;
@@ -49,16 +52,13 @@ public class CalamityWind extends AbstractCalamityEntity {
     @Override
     public void tick() {
         super.tick();
-
         if (!this.getWorld().isClient) {
             if (dashCooldown > 0) dashCooldown--;
             if (summonCooldown > 0) summonCooldown--;
-
             if (dashCooldown <= 0 && this.random.nextFloat() < 0.25f) {
                 performDash();
                 dashCooldown = 600;
             }
-
             if (summonCooldown <= 0) {
                 performSummon();
                 summonCooldown = 600;
@@ -69,11 +69,9 @@ public class CalamityWind extends AbstractCalamityEntity {
     private void performDash() {
         LivingEntity target = this.getTarget();
         if (target == null) return;
-
         Vec3d direction = target.getPos().subtract(this.getPos()).normalize();
         this.setVelocity(direction.multiply(2.0));
         this.velocityDirty = true;
-
         if (this.distanceTo(target) < 3.0) {
             target.damage(this.getDamageSources().mobAttack(this), 15.0f);
             Vec3d knockback = target.getPos().subtract(this.getPos()).normalize().multiply(3.0);
@@ -82,19 +80,21 @@ public class CalamityWind extends AbstractCalamityEntity {
     }
 
     private void performSummon() {
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 3; i++) {
             CalamityWraith wraith = new CalamityWraith(ModEntities.CALAMITY_WRAITH, this.getWorld());
             wraith.setPosition(this.getPos());
             this.getWorld().spawnEntity(wraith);
         }
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 1; i++) {
             CalamityPhantom phantom = new CalamityPhantom(ModEntities.CALAMITY_PHANTOM, this.getWorld());
             phantom.setPosition(this.getPos());
             this.getWorld().spawnEntity(phantom);
         }
-        CalamitySoldier soldier = new CalamitySoldier(ModEntities.CALAMITY_SOLDIER, this.getWorld());
-        soldier.setPosition(this.getPos());
-        this.getWorld().spawnEntity(soldier);
+        if (this.random.nextBoolean()) {
+            CalamitySoldier soldier = new CalamitySoldier(ModEntities.CALAMITY_SOLDIER, this.getWorld());
+            soldier.setPosition(this.getPos());
+            this.getWorld().spawnEntity(soldier);
+        }
     }
 
     @Override
@@ -109,12 +109,10 @@ public class CalamityWind extends AbstractCalamityEntity {
         int hurt = this.dataTracker.get(HURT_TIME);
         int death = this.dataTracker.get(DEATH_TIME);
         float[] color = getParticleColor();
-
         float alpha = (death >= 0) ? death / 20.0f : 1.0f;
         double x = this.getX();
         double y = this.getY() + 1.0;
         double z = this.getZ();
-
         for (int i = 0; i < 50; i++) {
             double angle = random.nextDouble() * 2 * Math.PI;
             double radius = 1.0 + random.nextDouble() * 0.5;
@@ -128,11 +126,23 @@ public class CalamityWind extends AbstractCalamityEntity {
     @Override
     protected void dropEquipment(DamageSource source, int lootingMultiplier, boolean allowDrops) {
         super.dropEquipment(source, lootingMultiplier, allowDrops);
-        if (allowDrops) {
-            this.dropItem(ModRegistry.CALAMITY_WIND_ITEM, 1);
-            this.dropItem(Items.ROTTEN_FLESH, 2 + this.random.nextInt(4));
-            this.dropItem(Items.NAME_TAG, 1);
-            this.dropItem(ModRegistry.DEPLETED_RAINBOW_BLOCK_ITEM, 1 + this.random.nextInt(3));
+        if (!allowDrops) return;
+        Random rand = this.random;
+        // 随机掉落一种物品
+        int roll = rand.nextInt(4);
+        switch (roll) {
+            case 0:
+                this.dropItem(ModRegistry.CALAMITY_WIND_ITEM, 1);
+                break;
+            case 1:
+                this.dropItem(Items.ROTTEN_FLESH, 2 + rand.nextInt(4));
+                break;
+            case 2:
+                this.dropItem(Items.NAME_TAG, 1);
+                break;
+            case 3:
+                this.dropItem(ModRegistry.DEPLETED_RAINBOW_BLOCK_ITEM, 1 + rand.nextInt(3));
+                break;
         }
     }
 }
