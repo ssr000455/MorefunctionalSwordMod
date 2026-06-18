@@ -1,12 +1,16 @@
 package com.qidai.morefunctionalswordmod;
 
+import com.qidai.morefunctionalswordmod.network.RainbowSettingsSyncPacket;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 public class ModKeyBindings {
@@ -70,6 +74,7 @@ public class ModKeyBindings {
                     nbt.putBoolean("DestructMode", !current);
                     client.player.sendMessage(Text.literal("毁灭模式: " + (!current ? "开启" : "关闭"))
                         .formatted(!current ? Formatting.AQUA : Formatting.GRAY), false);
+                    syncSwordNbt(client.player.getMainHandStack());
                 }
             }
 
@@ -80,6 +85,7 @@ public class ModKeyBindings {
                     nbt.putBoolean("SpecialAttackMode", !current);
                     client.player.sendMessage(Text.literal("特殊攻击模式: " + (!current ? "开启" : "关闭"))
                         .formatted(!current ? Formatting.LIGHT_PURPLE : Formatting.GRAY), false);
+                    syncSwordNbt(client.player.getMainHandStack());
                 }
             }
 
@@ -89,6 +95,7 @@ public class ModKeyBindings {
                     nbt.putBoolean("DestructMode", false);
                     nbt.putBoolean("SpecialAttackMode", false);
                     client.player.sendMessage(Text.literal("所有模式已关闭").formatted(Formatting.GRAY), false);
+                    syncSwordNbt(client.player.getMainHandStack());
                 }
             }
 
@@ -99,6 +106,7 @@ public class ModKeyBindings {
                     nbt.putBoolean("FreezeMode", !current);
                     client.player.sendMessage(Text.literal("冰冻模式: " + (!current ? "开启" : "关闭"))
                         .formatted(!current ? Formatting.AQUA : Formatting.GRAY), false);
+                    syncSwordNbt(client.player.getMainHandStack());
                 }
             }
 
@@ -109,6 +117,7 @@ public class ModKeyBindings {
                     nbt.putBoolean("HealMode", !current);
                     client.player.sendMessage(Text.literal("治疗模式: " + (!current ? "开启" : "关闭"))
                         .formatted(!current ? Formatting.GREEN : Formatting.GRAY), false);
+                    syncSwordNbt(client.player.getMainHandStack());
                 }
             }
 
@@ -119,8 +128,18 @@ public class ModKeyBindings {
                     nbt.putBoolean("SwordWaveMode", !current);
                     client.player.sendMessage(Text.literal("剑气模式: " + (!current ? "开启" : "关闭"))
                         .formatted(!current ? Formatting.YELLOW : Formatting.GRAY), false);
+                    syncSwordNbt(client.player.getMainHandStack());
                 }
             }
         });
+    }
+
+    // 将客户端修改的 NBT 同步到服务端，确保模式切换生效
+    private static void syncSwordNbt(net.minecraft.item.ItemStack stack) {
+        if (stack.getItem() instanceof RainbowSwordItem) {
+            var buf = PacketByteBufs.create();
+            buf.writeNbt(stack.getOrCreateNbt());
+            ClientPlayNetworking.send(RainbowSettingsSyncPacket.ID, buf);
+        }
     }
 }

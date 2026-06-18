@@ -10,6 +10,10 @@ public class CheatScreen extends Screen {
     private static final int IMG_W = 1024;
     private static final int IMG_H = 512;
 
+    // 缓存位置和尺寸，只在窗口改变时重新计算
+    private int cachedSw = -1, cachedSh = -1;
+    private int cachedX, cachedY, cachedDrawW, cachedDrawH;
+
     public CheatScreen() {
         super(Text.literal(""));
     }
@@ -19,14 +23,19 @@ public class CheatScreen extends Screen {
         int sw = this.width;
         int sh = this.height;
 
-        float scale = Math.min((float) sw / IMG_W, (float) sh / IMG_H);
-        int drawW = (int) (IMG_W * scale);
-        int drawH = (int) (IMG_H * scale);
-        int x = (sw - drawW) / 2;
-        int y = (sh - drawH) / 2;
+        // 如果窗口尺寸没变，直接使用缓存值；否则重新计算
+        if (sw != cachedSw || sh != cachedSh) {
+            float scale = Math.min((float) sw / IMG_W, (float) sh / IMG_H);
+            cachedDrawW = (int) (IMG_W * scale);
+            cachedDrawH = (int) (IMG_H * scale);
+            cachedX = (sw - cachedDrawW) / 2;
+            cachedY = (sh - cachedDrawH) / 2;
+            cachedSw = sw;
+            cachedSh = sh;
+        }
 
         context.fill(0, 0, sw, sh, 0xFF000000);
-        context.drawTexture(CHEAT_IMG, x, y, 0, 0, drawW, drawH, drawW, drawH);
+        context.drawTexture(CHEAT_IMG, cachedX, cachedY, 0, 0, cachedDrawW, cachedDrawH, cachedDrawW, cachedDrawH);
 
         super.render(context, mouseX, mouseY, delta);
     }
@@ -51,8 +60,8 @@ public class CheatScreen extends Screen {
         return super.mouseReleased(mouseX, mouseY, button);
     }
 
-    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
-        // 保持默认背景渲染行为
+    @Override
+    public void renderBackground(DrawContext context) {
         super.renderBackground(context);
     }
 }

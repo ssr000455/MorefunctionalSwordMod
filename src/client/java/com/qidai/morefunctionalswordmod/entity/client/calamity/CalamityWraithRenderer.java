@@ -3,24 +3,19 @@ package com.qidai.morefunctionalswordmod.entity.client.calamity;
 import com.qidai.morefunctionalswordmod.entity.calamity.CalamityWraith;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.render.entity.EntityRenderer;
 import net.minecraft.client.render.entity.EntityRendererFactory;
-import net.minecraft.util.Identifier;
 
+/**
+ * 灾厄之灵渲染器 — 显示为瘦长绿白色人形轮廓
+ */
 @Environment(EnvType.CLIENT)
-public class CalamityWraithRenderer extends EntityRenderer<CalamityWraith> {
+public class CalamityWraithRenderer extends CalamityBaseRenderer {
     public CalamityWraithRenderer(EntityRendererFactory.Context ctx) {
-        super(ctx);
-    }
-
-    @Override
-    public Identifier getTexture(CalamityWraith entity) {
-        return null; // 无纹理，粒子效果
-    }
-
-    @Override
-    public void render(CalamityWraith entity, float yaw, float tickDelta, net.minecraft.client.util.math.MatrixStack matrices, net.minecraft.client.render.VertexConsumerProvider vertexConsumers, int light) {
-        // 不需要渲染模型，粒子由实体自己生成
-        super.render(entity, yaw, tickDelta, matrices, vertexConsumers, light);
+        super(ctx,
+                new net.minecraft.util.Identifier("textures/entity/zombie/zombie.png"),
+                new net.minecraft.client.render.entity.model.ZombieEntityModel<>(
+                        ctx.getPart(net.minecraft.client.render.entity.model.EntityModelLayers.ZOMBIE)),
+                0.8f, 1.6f, 0.8f,
+                new float[]{0.3f, 0.9f, 0.5f, 0.7f});
     }
 }

@@ -25,6 +25,8 @@ public class CombatCheck {
             data.attackCount = 1;
         } else {
             data.attackCount++;
+        }
+        if (data.attackCount > 1) {
             double cps = data.attackCount * 1000.0 / (now - data.lastAttackTime);
             if (cps > MAX_CPS) {
                 data.invalidAttackCount++;

@@ -171,7 +171,7 @@ public class RainbowGemItems {
         @Override
         public void inventoryTick(ItemStack stack, World world, net.minecraft.entity.Entity entity, int slot, boolean selected) {
             if (!world.isClient && entity instanceof PlayerEntity player) {
-                player.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, 220, 2, true, false, true));
+                player.addStatusEffect(new StatusEffectInstance(StatusEffects.STRENGTH, 220, 2, true, false, true));
             }
         }
     }
@@ -191,7 +191,7 @@ public class RainbowGemItems {
         @Override
         public void inventoryTick(ItemStack stack, World world, net.minecraft.entity.Entity entity, int slot, boolean selected) {
             if (!world.isClient && entity instanceof PlayerEntity player) {
-                player.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, 220, 2, true, false, true));
+                player.addStatusEffect(new StatusEffectInstance(StatusEffects.SPEED, 220, 1, true, false, true));
             }
         }
     }

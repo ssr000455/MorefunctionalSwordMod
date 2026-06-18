@@ -14,6 +14,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 七彩神剑NBT加密管理器
@@ -28,13 +29,22 @@ public class NbtEncryptionManager {
     private static final int ITERATION_COUNT = 10000;
     private static final String SECRET_SALT = "MoreFunctionalSwordMod_Salt_2026"; // 服务端固定盐，可更改但必须一致
 
+    // 缓存派生密钥，避免每次加解密都执行 PBKDF2(10000次迭代)
+    private static final ConcurrentHashMap<String, SecretKey> KEY_CACHE = new ConcurrentHashMap<>();
+
     private static SecretKey generateKey(String playerUuid) throws Exception {
+        // 从缓存读取
+        SecretKey cached = KEY_CACHE.get(playerUuid);
+        if (cached != null) return cached;
+
         String combined = playerUuid + SECRET_SALT;
         PBEKeySpec spec = new PBEKeySpec(combined.toCharArray(), combined.getBytes(StandardCharsets.UTF_8),
                 ITERATION_COUNT, KEY_LENGTH);
         SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
         byte[] keyBytes = factory.generateSecret(spec).getEncoded();
-        return new SecretKeySpec(keyBytes, "AES");
+        SecretKey key = new SecretKeySpec(keyBytes, "AES");
+        KEY_CACHE.put(playerUuid, key);
+        return key;
     }
 
     /**
@@ -44,25 +54,8 @@ public class NbtEncryptionManager {
      * @return Base64 编码的加密字符串，失败返回 null
      */
     public static String encrypt(ServerPlayerEntity player, NbtCompound data) {
-        try {
-            byte[] dataBytes = data.toString().getBytes(StandardCharsets.UTF_8);
-            SecretKey key = generateKey(player.getUuid().toString());
-            Cipher cipher = Cipher.getInstance(ALGORITHM);
-            byte[] iv = new byte[IV_LENGTH];
-            SecureRandom random = new SecureRandom();
-            random.nextBytes(iv);
-            GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
-            cipher.init(Cipher.ENCRYPT_MODE, key, spec);
-            byte[] encrypted = cipher.doFinal(dataBytes);
-            // 将 IV 和密文拼接后 Base64
-            byte[] combined = new byte[iv.length + encrypted.length];
-            System.arraycopy(iv, 0, combined, 0, iv.length);
-            System.arraycopy(encrypted, 0, combined, iv.length, encrypted.length);
-            return Base64.getEncoder().encodeToString(combined);
-        } catch (Exception e) {
-            LOGGER.error("Failed to encrypt NBT for player {}", player.getName().getString(), e);
-            return null;
-        }
+        // 使用 encryptNbt 的字节序列化方案（更可靠）
+        return encryptNbt(player, data);
     }
 
     /**
@@ -72,26 +65,8 @@ public class NbtEncryptionManager {
      * @return 解密后的 NbtCompound，失败返回 null
      */
     public static NbtCompound decrypt(ServerPlayerEntity player, String encryptedBase64) {
-        try {
-            byte[] combined = Base64.getDecoder().decode(encryptedBase64);
-            if (combined.length < IV_LENGTH) return null;
-            byte[] iv = new byte[IV_LENGTH];
-            byte[] encrypted = new byte[combined.length - IV_LENGTH];
-            System.arraycopy(combined, 0, iv, 0, IV_LENGTH);
-            System.arraycopy(combined, IV_LENGTH, encrypted, 0, encrypted.length);
-            SecretKey key = generateKey(player.getUuid().toString());
-            Cipher cipher = Cipher.getInstance(ALGORITHM);
-            GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
-            cipher.init(Cipher.DECRYPT_MODE, key, spec);
-            byte[] decrypted = cipher.doFinal(encrypted);
-            String json = new String(decrypted, StandardCharsets.UTF_8);
-            NbtCompound result = new NbtCompound();
-            LOGGER.warn("Decrypt using toString method may not be perfect, consider reimplementing.");
-            return result;
-        } catch (Exception e) {
-            LOGGER.error("Failed to decrypt NBT for player {}", player.getName().getString(), e);
-            return null;
-        }
+        // 使用 encryptNbt/decryptNbt 的字节序列化方案（更可靠）
+        return decryptNbt(player, encryptedBase64);
     }
 
     // 更好的实现：直接序列化 NBT 到字节数组

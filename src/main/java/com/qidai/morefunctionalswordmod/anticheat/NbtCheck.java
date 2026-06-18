@@ -18,8 +18,20 @@ public class NbtCheck {
             }
             NbtCompound nbt = mainHand.getOrCreateNbt();
             float damage = nbt.getFloat("BaseDamage");
-            if (damage > 1e7f) {
+            if (!Float.isInfinite(damage) && damage > 1e7f) {
                 AntiCheatManager.getInstance().kickPlayer(player, "BaseDamage 数值异常");
+                return false;
+            }
+            // 检查攻击范围上限
+            int attackRange = nbt.getInt("AttackRange");
+            if (attackRange > 256) {
+                AntiCheatManager.getInstance().kickPlayer(player, "AttackRange 数值异常");
+                return false;
+            }
+            // 检查连续攻击时间上限
+            int continuousTime = nbt.getInt("ContinuousAttackTime");
+            if (continuousTime > 9999) {
+                AntiCheatManager.getInstance().kickPlayer(player, "ContinuousAttackTime 数值异常");
                 return false;
             }
         }

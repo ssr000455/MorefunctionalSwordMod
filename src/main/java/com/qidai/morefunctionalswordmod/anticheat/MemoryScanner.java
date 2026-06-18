@@ -25,7 +25,7 @@ public class MemoryScanner {
         }
 
         long now = System.currentTimeMillis();
-        long timeDelta = now - (snapshots.get(uuid) != null ? snapshots.get(uuid).timestamp : now);
+        long timeDelta = now - last.timestamp;
         
         // 生命值异常检测（排除正常变化）
         // 正常变化范围：受伤最多20点/次，回血最多2点/秒，吃东西最多8点

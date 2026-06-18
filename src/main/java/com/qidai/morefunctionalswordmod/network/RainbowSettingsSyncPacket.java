@@ -1,5 +1,6 @@
 package com.qidai.morefunctionalswordmod.network;
 
+import com.qidai.morefunctionalswordmod.RainbowSwordItem;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.nbt.NbtCompound;
@@ -16,14 +17,16 @@ public class RainbowSettingsSyncPacket {
         return buf;
     }
 
+    public static void handle(ServerPlayerEntity player, NbtCompound nbt) {
+        if (nbt != null && player.getMainHandStack().getItem() instanceof RainbowSwordItem) {
+            player.getMainHandStack().setNbt(nbt);
+        }
+    }
+
     public static void register() {
         ServerPlayNetworking.registerGlobalReceiver(ID, (server, player, handler, buf, responseSender) -> {
             NbtCompound nbt = buf.readNbt();
-            server.execute(() -> {
-                if (nbt != null && player.getMainHandStack().getItem() instanceof com.qidai.morefunctionalswordmod.RainbowSwordItem) {
-                    player.getMainHandStack().setNbt(nbt);
-                }
-            });
+            server.execute(() -> handle(player, nbt));
         });
     }
 }

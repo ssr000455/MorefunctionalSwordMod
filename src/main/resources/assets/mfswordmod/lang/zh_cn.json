@@ -124,5 +124,10 @@
     "entity.mfswordmod.calamity_soldier": "灾厄鬼兵",
     "entity.mfswordmod.decayed_rainbow_monster": "衰败彩虹水怪",
     
-    "structure.mfswordmod.rainbow_ruin": "彩虹遗迹"
+    "structure.mfswordmod.rainbow_ruin": "彩虹遗迹",
+
+    "gui.mfswordmod.settings.title": "七彩神剑设置",
+    "gui.mfswordmod.settings.save": "保存设置",
+    "gui.mfswordmod.settings.close": "退出",
+    "gui.mfswordmod.settings.saved": "设置已保存"
 }

@@ -66,10 +66,20 @@ public class DiamondMaterials {
         public ArmorMaterial asArmorMaterial() {
             return new ArmorMaterial() {
                 @Override public int getDurability(ArmorItem.Type type) {
-                    return BASE_DURABILITY[type.ordinal()] * armorDurabilityMultiplier;
+                    return switch (type) {
+                        case HELMET -> 13 * armorDurabilityMultiplier;
+                        case CHESTPLATE -> 15 * armorDurabilityMultiplier;
+                        case LEGGINGS -> 16 * armorDurabilityMultiplier;
+                        case BOOTS -> 11 * armorDurabilityMultiplier;
+                    };
                 }
                 @Override public int getProtection(ArmorItem.Type type) {
-                    return protectionValues[type.ordinal()];
+                    return switch (type) {
+                        case HELMET -> protectionValues[0];
+                        case CHESTPLATE -> protectionValues[1];
+                        case LEGGINGS -> protectionValues[2];
+                        case BOOTS -> protectionValues[3];
+                    };
                 }
                 @Override public int getEnchantability() { return armorEnchantability; }
                 @Override public SoundEvent getEquipSound() { return equipSound; }
@@ -81,5 +91,4 @@ public class DiamondMaterials {
         }
     }
 
-    private static final int[] BASE_DURABILITY = new int[] {13, 15, 16, 11};
 }

@@ -3,6 +3,7 @@ package com.qidai.morefunctionalswordmod.entity.calamity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.entity.ai.goal.*;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
@@ -70,6 +71,15 @@ public class CalamitySoldier extends AbstractCalamityEntity {
 
     private boolean tryTeleport(double x, double y, double z) {
         if (!this.getWorld().isClient) {
+            BlockPos targetPos = BlockPos.ofFloored(x, y, z);
+            // 检查目标位置是否安全（不是液体，不是实心方块内部）
+            if (!this.getWorld().getBlockState(targetPos).isAir() &&
+                !this.getWorld().getBlockState(targetPos).isReplaceable()) {
+                return false;
+            }
+            if (!this.getWorld().getBlockState(targetPos.up()).isAir()) {
+                return false;
+            }
             this.requestTeleport(x, y, z);
             return true;
         }

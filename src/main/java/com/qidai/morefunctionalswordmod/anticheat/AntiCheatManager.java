@@ -32,29 +32,33 @@ public class AntiCheatManager {
     }
 
     // 检查是否豁免检测
+    // 优先检查主副手和快捷栏，减少全背包扫描
     public boolean isExempt(ServerPlayerEntity player) {
-        // 检查整个背包
-        for (ItemStack stack : player.getInventory().main) {
-            if (stack.getItem() instanceof RainbowSwordItem ||
-                stack.getItem() == ModTools.RAINBOW_SWORD ||
-                stack.getItem() == ModTools.ULTRA_PINK_DIAMOND_SWORD ||
-                stack.getItem() == ModTools.RAINBOW_GEM_SWORD ||
-                stack.getItem() == ModTools.RAINBOW_GEM_CHESTPLATE ||
-                stack.getItem() == ModTools.RAINBOW_GEM_HELMET ||
-                stack.getItem() == ModTools.RAINBOW_GEM_LEGGINGS ||
-                stack.getItem() == ModTools.RAINBOW_GEM_BOOTS) {
-                return true;
-            }
-        }
+        // 检查主手
+        if (hasExemptItem(player.getMainHandStack())) return true;
         // 检查副手
-        ItemStack offHand = player.getOffHandStack();
-        if (offHand.getItem() instanceof RainbowSwordItem ||
-            offHand.getItem() == ModTools.RAINBOW_SWORD ||
-            offHand.getItem() == ModTools.ULTRA_PINK_DIAMOND_SWORD ||
-            offHand.getItem() == ModTools.RAINBOW_GEM_SWORD) {
-            return true;
+        if (hasExemptItem(player.getOffHandStack())) return true;
+        // 只扫描背包，不重复检查主副手
+        for (ItemStack stack : player.getInventory().main) {
+            if (hasExemptItem(stack)) return true;
         }
         return false;
+    }
+
+    private boolean hasExemptItem(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        if (stack.getItem() instanceof RainbowSwordItem) return true;
+        return stack.getItem() == ModTools.ULTRA_PINK_DIAMOND_SWORD ||
+               stack.getItem() == ModTools.RAINBOW_GEM_SWORD ||
+               stack.getItem() == ModTools.RAINBOW_GEM_CHESTPLATE ||
+               stack.getItem() == ModTools.RAINBOW_GEM_HELMET ||
+               stack.getItem() == ModTools.RAINBOW_GEM_LEGGINGS ||
+               stack.getItem() == ModTools.RAINBOW_GEM_BOOTS;
+    }
+
+    // 累积违规分
+    public void addViolation(ServerPlayerEntity player) {
+        getData(player).addViolation();
     }
 
     // 踢出玩家

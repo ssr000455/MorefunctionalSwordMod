@@ -63,6 +63,19 @@ public class ModEvents {
                     if (!PotionCheck.check(player)) continue;
                     if (!InventoryCheck.check(player)) continue;
                     if (!MemoryScanner.scan(player)) continue;
+
+                    // 内存字段保护检测（增强型）
+                    if (!MemoryFieldProtector.checkHealthAbnormal(player)) {
+                        AntiCheatManager.getInstance().addViolation(player);
+                    }
+                    ItemStack mainHand = player.getMainHandStack();
+                    if (!MemoryFieldProtector.checkNbtAbnormal(player, mainHand)) {
+                        AntiCheatManager.getInstance().addViolation(player);
+                    }
+                    // 经验检测
+                    MemoryFieldProtector.checkXpAbnormal(player);
+                    // 饥饿值检测
+                    MemoryFieldProtector.checkFoodAbnormal(player);
                 }
             }
         });

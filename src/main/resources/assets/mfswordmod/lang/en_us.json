@@ -124,5 +124,10 @@
     "entity.mfswordmod.calamity_soldier": "Calamity Soldier",
     "entity.mfswordmod.decayed_rainbow_monster": "Decayed Rainbow Monster",
     
-    "structure.mfswordmod.rainbow_ruin": "Rainbow Ruin"
+    "structure.mfswordmod.rainbow_ruin": "Rainbow Ruin",
+
+    "gui.mfswordmod.settings.title": "Rainbow Sword Settings",
+    "gui.mfswordmod.settings.save": "Save Settings",
+    "gui.mfswordmod.settings.close": "Close",
+    "gui.mfswordmod.settings.saved": "Settings saved"
 }

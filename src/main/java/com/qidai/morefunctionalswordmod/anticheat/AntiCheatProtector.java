@@ -5,11 +5,18 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
 import java.lang.management.ManagementFactory;
+import java.util.logging.Logger;
 
 public class AntiCheatProtector {
+    private static final Logger LOGGER = Logger.getLogger("AntiCheatProtector");
+
     public static boolean detectDebugger() {
-        String vmArgs = ManagementFactory.getRuntimeMXBean().getInputArguments().toString();
-        return vmArgs.contains("-agentlib:jdwp") || vmArgs.contains("-Xdebug");
+        try {
+            String vmArgs = ManagementFactory.getRuntimeMXBean().getInputArguments().toString();
+            return vmArgs.contains("-agentlib:jdwp") || vmArgs.contains("-Xdebug");
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public static boolean detectCheatMods() {
@@ -17,12 +24,12 @@ public class AntiCheatProtector {
             "net.ccbluex.liquidbounce.LiquidBounce",
             "net.wurstclient.WurstClient",
             "net.impactclient.ImpactClient",
-            "net.arikia.dev.drpc.DiscordRPC",  // 常见作弊辅助
-            "net.minecraftforge.fml.common.Loader"  // Forge 可能冲突
+            "net.arikia.dev.drpc.DiscordRPC"
         };
         for (String className : cheatClasses) {
             try {
                 Class.forName(className);
+                LOGGER.warning("检测到作弊模组: " + className);
                 return true;
             } catch (ClassNotFoundException ignored) {}
         }
