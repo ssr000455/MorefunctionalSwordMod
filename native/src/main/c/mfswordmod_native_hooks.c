@@ -21,7 +21,6 @@ typedef void (*AddVelocityFunc)(void* entity, double x, double y, double z);
 typedef jboolean (*HandleFallDamageFunc)(void* entity, float distance, float damageMultiplier);
 typedef jfloat (*GetAttackCooldownFunc)(void* player, float baseTime);
 typedef void (*OnDisconnectFunc)(void* networkHandler, void* text);
-typedef void (*TransferSlotFunc)(void* handler, int slot, int otherSlot);
 typedef double (*GetAttackRangeFunc)(void* player);
 typedef float (*ApplyArmorToDamageFunc)(void* entity, float damage, void* damageSource);
 typedef float (*GetBlockSpeedFactorFunc)(void* entity, void* blockState);
@@ -60,7 +59,6 @@ AddVelocityFunc original_addVelocity = NULL;
 HandleFallDamageFunc original_handleFallDamage = NULL;
 GetAttackCooldownFunc original_getAttackCooldown = NULL;
 OnDisconnectFunc original_onDisconnect = NULL;
-TransferSlotFunc original_transferSlot = NULL;
 GetAttackRangeFunc original_getAttackRange = NULL;
 ApplyArmorToDamageFunc original_applyArmorToDamage = NULL;
 GetBlockSpeedFactorFunc original_getBlockSpeedFactor = NULL;
@@ -489,9 +487,7 @@ JNIEXPORT void JNICALL Java_com_qidai_morefunctionalswordmod_NativeLoader_instal
     if (addr_onDisconnect != 0) {
         DobbyHook((void*)addr_onDisconnect, (void*)hooked_onDisconnect_protect, (void**)&original_onDisconnect);
     }
-    if (addr_transferSlot != 0) {
-        DobbyHook((void*)addr_transferSlot, (void*)hooked_transferSlot, (void**)&original_transferSlot);
-    }
+    // addr_transferSlot 由 protect.c 处理，此处不 Hook，避免 undefined reference
     if (addr_getAttackRange != 0) {
         DobbyHook((void*)addr_getAttackRange, (void*)hooked_getAttackRange, (void**)&original_getAttackRange);
     }
