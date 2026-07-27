@@ -4,6 +4,8 @@
 // 支持: ARM64 / ARM32 / x86_64
 // ================================================================
 
+#define _GNU_SOURCE
+#include <stdarg.h>
 #include "dobby.h"
 #include <stdio.h>
 #include <stdlib.h>
