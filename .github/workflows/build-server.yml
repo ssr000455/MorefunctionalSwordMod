@@ -17,33 +17,22 @@ jobs:
           java-version: 17
           distribution: temurin
 
-      - name: Install Android NDK
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y android-sdk
-          echo "ANDROID_HOME=/usr/lib/android-sdk" >> $GITHUB_ENV
-          echo "$ANDROID_HOME/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
-
-      - name: Build Native Library
-        run: |
-          mkdir -p src/main/resources/native
-          clang -O2 -fPIC -shared -D__ANDROID__ \
-            -I native/src/main/c \
-            -I /usr/lib/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include \
-            -I $JAVA_HOME/include \
-            -I $JAVA_HOME/include/linux \
-            native/src/main/c/mfswordmod_native.c \
-            native/src/main/c/dobby.c \
-            -o src/main/resources/native/libmfswordmod-arm64.so \
-            -ldl
+      - name: Setup NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26c
+          add-to-path: true
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 8.7
 
-      - name: Build with Gradle
-        run: gradle build
+      - name: Build Native with Gradle
+        run: ./gradlew :native:buildNative
+
+      - name: Build Mod JAR
+        run: ./gradlew build
 
       - name: Rename artifact
         run: |
