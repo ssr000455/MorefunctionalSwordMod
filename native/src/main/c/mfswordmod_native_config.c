@@ -118,7 +118,7 @@ static const char* get_config_dir() {
     return g_config_dir;
 }
 
-static const char* get_config_path() {
+const char* get_config_path() {
     if (g_config_path[0] != 0) return g_config_path;
     const char* dir = get_config_dir();
     snprintf(g_config_path, sizeof(g_config_path), "%s/mfswordmod.properties", dir);
@@ -159,9 +159,7 @@ static void create_default_config() {
     mkdir_recursive(dir);
     const char* path = get_config_path();
     FILE* fp = fopen(path, "w");
-    if (fp == NULL) {
-        return;
-    }
+    if (fp == NULL) return;
     fputs(DEFAULT_CONFIG, fp);
     fclose(fp);
 }
