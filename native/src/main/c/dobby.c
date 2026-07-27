@@ -1,9 +1,3 @@
-// ================================================================
-// 文件名: dobby.c
-// 用途: Dobby Hook 完整实现
-// 支持: ARM64 / ARM32 / x86_64
-// ================================================================
-
 #define _GNU_SOURCE
 #include <stdarg.h>
 #include "dobby.h"
@@ -14,17 +8,9 @@
 #include <sys/mman.h>
 #include <pthread.h>
 
-// ================================================================
-// 内部全局状态
-// ================================================================
-
 static DobbyHookEntry* g_hook_list = NULL;
 static pthread_mutex_t g_hook_lock = PTHREAD_MUTEX_INITIALIZER;
 static DobbyLogCallback g_log_callback = NULL;
-
-// ================================================================
-// 内部日志函数
-// ================================================================
 
 static void dobby_log(const char* fmt, ...) {
     char buffer[512];
@@ -40,10 +26,6 @@ static void dobby_log(const char* fmt, ...) {
     }
 }
 
-// ================================================================
-// 内部辅助函数
-// ================================================================
-
 static long get_page_size(void) {
     static long page_size = 0;
     if (page_size == 0) {
@@ -55,12 +37,6 @@ static long get_page_size(void) {
 static void* align_to_page(void* address) {
     long page_size = get_page_size();
     return (void*)((uintptr_t)address & ~(page_size - 1));
-}
-
-static bool is_executable(void* address) {
-    // 简单检查: 尝试读取并执行
-    // 实际应该检查内存映射的权限，这里简化处理
-    return address != NULL;
 }
 
 static int set_memory_permission(void* address, size_t size, int prot) {
@@ -79,16 +55,10 @@ static void flush_instruction_cache(void* address, size_t size) {
 #if defined(__arm__) || defined(__aarch64__)
     __clear_cache(address, (void*)((uintptr_t)address + size));
 #elif defined(__x86_64__) || defined(__i386__)
-    // x86 不需要显式刷新缓存
 #else
-    // 通用方式
     __builtin___clear_cache((char*)address, (char*)address + size);
 #endif
 }
-
-// ================================================================
-// Hook 链表操作
-// ================================================================
 
 static DobbyHookEntry* find_hook_entry(void* target) {
     DobbyHookEntry* entry = g_hook_list;
@@ -126,33 +96,18 @@ static void remove_hook_entry(void* target) {
     pthread_mutex_unlock(&g_hook_lock);
 }
 
-// ================================================================
-// 架构相关 Hook 实现
-// ================================================================
-
 #if defined(__aarch64__)
-// ================================================================
-// ARM64 架构实现
-// ================================================================
-
 typedef uint32_t arm64_insn_t;
-
-static size_t arm64_get_instruction_size(arm64_insn_t insn) {
-    // ARM64 所有指令都是 4 字节
-    return 4;
-}
 
 static int arm64_install_hook(void* target, void* replace, void** origin) {
     if (target == NULL || replace == NULL) {
         return DOBBY_ERROR_INVALID_TARGET;
     }
     
-    // 检查是否已 hook
     if (find_hook_entry(target) != NULL) {
         return DOBBY_ERROR_ALREADY_HOOKED;
     }
     
-    // 设置内存可写
     if (set_memory_permission(target, 16, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
         return DOBBY_ERROR_PERMISSION;
     }
@@ -161,11 +116,9 @@ static int arm64_install_hook(void* target, void* replace, void** origin) {
     uintptr_t target_ptr = (uintptr_t)target;
     uintptr_t replace_ptr = (uintptr_t)replace;
     
-    // 计算跳转距离
     int64_t offset = (replace_ptr - target_ptr) >> 2;
     bool is_near = (offset >= -0x03FFFFFF && offset <= 0x03FFFFFF);
     
-    // 创建入口
     DobbyHookEntry* entry = (DobbyHookEntry*)calloc(1, sizeof(DobbyHookEntry));
     if (entry == NULL) {
         return DOBBY_ERROR_MEMORY_ALLOC;
@@ -174,7 +127,6 @@ static int arm64_install_hook(void* target, void* replace, void** origin) {
     entry->replace = replace;
     entry->enabled = true;
     
-    // 保存原始指令 (前 2 条)
     entry->original_size = 8;
     entry->original_bytes = (uint8_t*)malloc(entry->original_size);
     if (entry->original_bytes == NULL) {
@@ -183,9 +135,7 @@ static int arm64_install_hook(void* target, void* replace, void** origin) {
     }
     memcpy(entry->original_bytes, target_addr, entry->original_size);
     
-    // 如果 origin 不为 NULL，生成 trampoline
     if (origin != NULL) {
-        // 分配 trampoline 内存 (2条指令 + 1条跳转 + 对齐)
         size_t tramp_size = 32;
         void* trampoline = DobbyAllocExecutableMemory(tramp_size);
         if (trampoline == NULL) {
@@ -196,46 +146,37 @@ static int arm64_install_hook(void* target, void* replace, void** origin) {
         entry->origin = trampoline;
         
         arm64_insn_t* tramp = (arm64_insn_t*)trampoline;
-        
-        // 复制原始指令
         tramp[0] = ((arm64_insn_t*)entry->original_bytes)[0];
         tramp[1] = ((arm64_insn_t*)entry->original_bytes)[1];
         
-        // 跳转回原函数 + 8 (跳过已复制的指令)
         uintptr_t return_addr = target_ptr + 8;
         int64_t return_offset = (return_addr - ((uintptr_t)tramp + 8)) >> 2;
         
-        // B 无条件跳转
         if (return_offset >= -0x03FFFFFF && return_offset <= 0x03FFFFFF) {
             tramp[2] = 0x14000000 | (0x03FFFFFF & return_offset);
         } else {
-            // 长跳转: ADRP + BR
-            tramp[2] = 0x90000000 | (((return_addr >> 12) & 0x1FFFFF) << 5); // ADRP X16
-            tramp[3] = 0x91BE0210 | ((return_addr & 0xFFF) << 10); // ADD X16, X16, #offset
-            tramp[4] = 0xD61F0200; // BR X16
+            tramp[2] = 0x90000000 | (((return_addr >> 12) & 0x1FFFFF) << 5);
+            tramp[3] = 0x91BE0210 | ((return_addr & 0xFFF) << 10);
+            tramp[4] = 0xD61F0200;
         }
         
         flush_instruction_cache(tramp, tramp_size);
         *origin = trampoline;
     }
     
-    // 写入跳转指令
     if (is_near) {
-        // B 无条件跳转
         target_addr[0] = 0x14000000 | (0x03FFFFFF & offset);
     } else {
-        // 长跳转: ADRP + ADD + BR
         uintptr_t page_addr = replace_ptr & ~0xFFF;
         uintptr_t target_page = target_ptr & ~0xFFF;
         int64_t page_offset = (page_addr - target_page) >> 12;
         
-        target_addr[0] = 0x90000000 | ((page_offset & 0x1FFFFF) << 5); // ADRP X16
-        target_addr[1] = 0x91BE0210 | ((replace_ptr & 0xFFF) << 10); // ADD X16, X16, #offset
-        target_addr[2] = 0xD61F0200; // BR X16
+        target_addr[0] = 0x90000000 | ((page_offset & 0x1FFFFF) << 5);
+        target_addr[1] = 0x91BE0210 | ((replace_ptr & 0xFFF) << 10);
+        target_addr[2] = 0xD61F0200;
     }
     
     flush_instruction_cache(target, 16);
-    
     add_hook_entry(entry);
     DOBBY_LOG("ARM64 hook installed at %p -> %p", target, replace);
     
@@ -252,11 +193,9 @@ static int arm64_unhook(void* target) {
         return DOBBY_ERROR_PERMISSION;
     }
     
-    // 恢复原始指令
     memcpy(target, entry->original_bytes, entry->original_size);
     flush_instruction_cache(target, entry->original_size);
     
-    // 清理 trampoline
     if (entry->origin != NULL) {
         DobbyFreeExecutableMemory(entry->origin, 32);
     }
@@ -268,10 +207,6 @@ static int arm64_unhook(void* target) {
 }
 
 #elif defined(__arm__)
-// ================================================================
-// ARM32 架构实现
-// ================================================================
-
 typedef uint32_t arm32_insn_t;
 
 static int arm32_install_hook(void* target, void* replace, void** origin) {
@@ -299,7 +234,6 @@ static int arm32_install_hook(void* target, void* replace, void** origin) {
     entry->replace = replace;
     entry->enabled = true;
     
-    // 保存原始指令 (前 2 条)
     entry->original_size = 8;
     entry->original_bytes = (uint8_t*)malloc(entry->original_size);
     if (entry->original_bytes == NULL) {
@@ -321,21 +255,17 @@ static int arm32_install_hook(void* target, void* replace, void** origin) {
         arm32_insn_t* tramp = (arm32_insn_t*)trampoline;
         tramp[0] = ((arm32_insn_t*)entry->original_bytes)[0];
         tramp[1] = ((arm32_insn_t*)entry->original_bytes)[1];
-        
-        // LDR PC, [PC, #-4] 跳转回原函数
-        tramp[2] = 0xE51FF004; // LDR PC, [PC, #-4]
+        tramp[2] = 0xE51FF004;
         tramp[3] = (arm32_insn_t)(target_ptr + 8);
         
         flush_instruction_cache(tramp, tramp_size);
         *origin = trampoline;
     }
     
-    // B 指令跳转 (ARM 模式)
     int32_t offset = (replace_ptr - target_ptr - 8) >> 2;
     target_addr[0] = 0xEA000000 | (0x00FFFFFF & offset);
     
     flush_instruction_cache(target, 8);
-    
     add_hook_entry(entry);
     DOBBY_LOG("ARM32 hook installed at %p -> %p", target, replace);
     
@@ -366,10 +296,6 @@ static int arm32_unhook(void* target) {
 }
 
 #elif defined(__x86_64__) || defined(__i386__)
-// ================================================================
-// x86 / x86_64 架构实现
-// ================================================================
-
 static int x86_install_hook(void* target, void* replace, void** origin) {
     if (target == NULL || replace == NULL) {
         return DOBBY_ERROR_INVALID_TARGET;
@@ -395,7 +321,6 @@ static int x86_install_hook(void* target, void* replace, void** origin) {
     entry->replace = replace;
     entry->enabled = true;
     
-    // 保存原始指令 (前 5 字节)
     entry->original_size = 5;
     entry->original_bytes = (uint8_t*)malloc(entry->original_size);
     if (entry->original_bytes == NULL) {
@@ -416,8 +341,6 @@ static int x86_install_hook(void* target, void* replace, void** origin) {
         
         uint8_t* tramp = (uint8_t*)trampoline;
         memcpy(tramp, target_addr, 5);
-        
-        // JMP rel32 跳转回原函数+5
         tramp[5] = 0xE9;
         int32_t offset = (target_ptr + 5) - ((uintptr_t)tramp + 10);
         memcpy(&tramp[6], &offset, 4);
@@ -426,13 +349,11 @@ static int x86_install_hook(void* target, void* replace, void** origin) {
         *origin = trampoline;
     }
     
-    // JMP rel32
     target_addr[0] = 0xE9;
     int32_t offset = (replace_ptr - target_ptr) - 5;
     memcpy(&target_addr[1], &offset, 4);
     
     flush_instruction_cache(target, 16);
-    
     add_hook_entry(entry);
     DOBBY_LOG("x86 hook installed at %p -> %p", target, replace);
     
@@ -463,10 +384,6 @@ static int x86_unhook(void* target) {
 }
 
 #else
-// ================================================================
-// 不支持的架构
-// ================================================================
-
 static int unsupported_install_hook(void* target, void* replace, void** origin) {
     DOBBY_LOG("Unsupported architecture");
     return DOBBY_ERROR_UNSUPPORTED_ARCH;
@@ -476,12 +393,7 @@ static int unsupported_unhook(void* target) {
     DOBBY_LOG("Unsupported architecture");
     return DOBBY_ERROR_UNSUPPORTED_ARCH;
 }
-
 #endif
-
-// ================================================================
-// 公共 API 实现
-// ================================================================
 
 int DobbyHook(void* target, void* replace, void** origin) {
     DOBBY_LOG("DobbyHook: target=%p, replace=%p", target, replace);
@@ -493,7 +405,6 @@ int DobbyHook(void* target, void* replace, void** origin) {
         return DOBBY_ERROR_INVALID_REPLACE;
     }
     
-    // 检查是否已被 hook
     if (DobbyIsHooked(target)) {
         DOBBY_LOG("Target %p already hooked", target);
         return DOBBY_ERROR_ALREADY_HOOKED;
@@ -538,7 +449,6 @@ int DobbyDisableHook(void* target) {
         return DOBBY_SUCCESS;
     }
     
-    // 恢复原始指令
     if (set_memory_permission(target, 16, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
         return DOBBY_ERROR_PERMISSION;
     }
@@ -561,7 +471,6 @@ int DobbyEnableHook(void* target) {
         return DOBBY_SUCCESS;
     }
     
-    // 重新安装 hook
     if (set_memory_permission(target, 16, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
         return DOBBY_ERROR_PERMISSION;
     }
@@ -639,7 +548,6 @@ int DobbyResetHook(void* target) {
         return DOBBY_ERROR_NOT_HOOKED;
     }
     
-    // 重新安装（使用保存的 replace）
     return DobbyHook(target, entry->replace, NULL);
 }
 
@@ -671,10 +579,6 @@ DobbyHookEntry* DobbyGetHookList(void) {
     return g_hook_list;
 }
 
-// ================================================================
-// 初始化/清理 (可选)
-// ================================================================
-
 __attribute__((constructor))
 static void dobby_init(void) {
     DOBBY_LOG("Dobby Hook initialized");
@@ -683,7 +587,6 @@ static void dobby_init(void) {
 __attribute__((destructor))
 static void dobby_fini(void) {
     DOBBY_LOG("Dobby Hook shutting down");
-    // 清理所有 hook
     while (g_hook_list != NULL) {
         DobbyHookEntry* entry = g_hook_list;
         g_hook_list = entry->next;

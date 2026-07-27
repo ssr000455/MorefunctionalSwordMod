@@ -9,6 +9,7 @@
 //       - 反作弊绕过 (Hook网络包发送)
 // ================================================================
 
+#define _GNU_SOURCE
 #include <jni.h>
 #include <string.h>
 #include <stdbool.h>

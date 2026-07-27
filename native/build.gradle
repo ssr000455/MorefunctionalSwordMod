@@ -21,6 +21,8 @@ tasks.register("buildNative") {
                 "-fPIC",
                 "-shared",
                 "-D__ANDROID__",
+                "-D__ANDROID_API__=24",
+                "-D_GNU_SOURCE",
                 "-I${srcDir}",
                 "-I${ndkHome}/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include",
                 "-I${javaHome}/include",
