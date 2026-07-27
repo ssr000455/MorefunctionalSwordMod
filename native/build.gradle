@@ -10,9 +10,13 @@ tasks.register("buildNative") {
         def ndkHome = System.getenv("ANDROID_NDK_HOME")
         def javaHome = System.getenv("JAVA_HOME")
 
-        def clang = file("${ndkHome}/toolchains/llvm/prebuilt/linux-x86_64/bin/clang")
+        // 使用 ARM64 交叉编译链
+        def clang = file("${ndkHome}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang")
         if (!clang.exists()) {
-            clang = file("${ndkHome}/bin/clang")
+            clang = file("${ndkHome}/bin/aarch64-linux-android24-clang")
+        }
+        if (!clang.exists()) {
+            throw new GradleException("找不到 aarch64-linux-android24-clang，请检查 NDK 版本")
         }
 
         def sysroot = "${ndkHome}/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
@@ -37,7 +41,11 @@ tasks.register("buildNative") {
                 "-ldl"
         }
 
-        println "✅ .so 已生成: ${targetDir}/libmfswordmod-arm64.so"
+        def soFile = file("${targetDir}/libmfswordmod-arm64.so")
+        if (!soFile.exists()) {
+            throw new GradleException("编译失败：.so 文件未生成")
+        }
+        println "✅ .so 已生成: ${soFile.absolutePath} (大小: ${soFile.length()} bytes)"
     }
 }
 
