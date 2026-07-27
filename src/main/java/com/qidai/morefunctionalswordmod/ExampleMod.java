@@ -18,6 +18,7 @@ public class ExampleMod implements ModInitializer {
         ModTools.registerModTools();
         ModItemGroups.registerItemGroups();
         ModEvents.register();
+        NativeLoader.load();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             ModCommands.register(dispatcher);
