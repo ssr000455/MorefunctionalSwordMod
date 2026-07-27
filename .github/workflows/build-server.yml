@@ -29,13 +29,13 @@ jobs:
           mkdir -p src/main/resources/native
           clang -O2 -fPIC -shared -D__ANDROID__ \
             -I native/src/main/c \
-            -I /usr/lib/android-sdk/ndk-bundle/sysroot/usr/include \
+            -I /usr/lib/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include \
             -I $JAVA_HOME/include \
             -I $JAVA_HOME/include/linux \
             native/src/main/c/mfswordmod_native.c \
             native/src/main/c/dobby.c \
             -o src/main/resources/native/libmfswordmod-arm64.so \
-            -llog -ldl
+            -ldl
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
