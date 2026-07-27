@@ -1,14 +1,3 @@
-// ================================================================
-// 文件名: mfswordmod_native.c
-// 版本: 2.0 (强力版)
-// 功能: 完全对齐七彩神剑模组逻辑
-//       - 基岩可破坏 (无视hardness)
-//       - 秒杀所有非玩家生物 (包括BOSS)
-//       - 持剑玩家100%免疫所有伤害
-//       - 七彩神剑NBT防篡改 (定时校验+回滚)
-//       - 反作弊绕过 (Hook网络包发送)
-// ================================================================
-
 #include <jni.h>
 #include <string.h>
 #include <stdbool.h>
@@ -31,12 +20,10 @@ static bool g_guardian_running = false;
 typedef jfloat (*GetHardnessFunc)(void* blockState, void* world, void* pos);
 typedef jboolean (*DamageFunc)(void* entity, void* damageSource, jfloat amount);
 typedef jboolean (*AttackEntityFromFunc)(void* entity, void* damageSource, jfloat amount);
-typedef void (*SendPacketFunc)(void* networkHandler, void* packet);
 
 static GetHardnessFunc original_getHardness = NULL;
 static DamageFunc original_damage = NULL;
 static AttackEntityFromFunc original_attackEntityFrom = NULL;
-static SendPacketFunc original_sendPacket = NULL;
 
 static JNIEnv* get_env() {
     JNIEnv* env = NULL;
@@ -44,6 +31,12 @@ static JNIEnv* get_env() {
         (*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL);
     }
     return env;
+}
+
+static void detach_env() {
+    if (g_jvm != NULL) {
+        (*g_jvm)->DetachCurrentThread(g_jvm);
+    }
 }
 
 static bool isRainbowSword(JNIEnv* env, jobject item) {
@@ -183,19 +176,19 @@ static jboolean hooked_attackEntityFrom(void* entity, void* damageSource, jfloat
     return original_attackEntityFrom(entity, damageSource, amount);
 }
 
-static void hooked_sendPacket(void* networkHandler, void* packet) {
-    original_sendPacket(networkHandler, packet);
-}
-
 static void* guardian_thread(void* arg) {
     LOGI("NBT guardian thread started");
     g_guardian_running = true;
 
+    // Attach once for the whole thread lifetime
+    JNIEnv* env = get_env();
+    if (env == NULL) {
+        LOGE("Failed to attach guardian thread");
+        return NULL;
+    }
+
     while (g_guardian_running) {
         sleep(1);
-
-        JNIEnv* env = get_env();
-        if (env == NULL) continue;
 
         jclass serverClass = (*env)->FindClass(env, "net/minecraft/server/MinecraftServer");
         if (serverClass == NULL) continue;
@@ -269,6 +262,9 @@ static void* guardian_thread(void* arg) {
         }
     }
 
+    // Detach before thread exits
+    detach_env();
+    LOGI("NBT guardian thread stopped");
     return NULL;
 }
 
@@ -284,8 +280,7 @@ JNIEXPORT void JNICALL Java_com_qidai_morefunctionalswordmod_NativeLoader_instal
     jobject obj,
     jlong addr_getHardness,
     jlong addr_damage,
-    jlong addr_attackEntityFrom,
-    jlong addr_sendPacket
+    jlong addr_attackEntityFrom
 ) {
     LOGI("Installing native hooks...");
 
@@ -300,10 +295,6 @@ JNIEXPORT void JNICALL Java_com_qidai_morefunctionalswordmod_NativeLoader_instal
     if (addr_attackEntityFrom != 0) {
         DobbyHook((void*)addr_attackEntityFrom, (void*)hooked_attackEntityFrom, (void**)&original_attackEntityFrom);
         LOGI("  Hook LivingEntity.attackEntityFrom");
-    }
-    if (addr_sendPacket != 0) {
-        DobbyHook((void*)addr_sendPacket, (void*)hooked_sendPacket, (void**)&original_sendPacket);
-        LOGI("  Hook sendPacket");
     }
 
     g_hooks_installed = true;

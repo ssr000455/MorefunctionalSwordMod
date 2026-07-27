@@ -17,55 +17,45 @@ static void dobby_log(const char* fmt, ...) {
     va_start(args, fmt);
     vsnprintf(buffer, sizeof(buffer), fmt, args);
     va_end(args);
-    
-    if (g_log_callback != NULL) {
-        g_log_callback(buffer);
-    } else {
-        printf("[Dobby] %s\n", buffer);
-    }
+    if (g_log_callback) g_log_callback(buffer);
+    else printf("[Dobby] %s\n", buffer);
 }
 
 static long get_page_size(void) {
     static long page_size = 0;
-    if (page_size == 0) {
-        page_size = sysconf(_SC_PAGESIZE);
-    }
+    if (!page_size) page_size = sysconf(_SC_PAGESIZE);
     return page_size;
 }
 
-static void* align_to_page(void* address) {
-    long page_size = get_page_size();
-    return (void*)((uintptr_t)address & ~(page_size - 1));
+static void* align_to_page(void* addr) {
+    return (void*)((uintptr_t)addr & ~(get_page_size() - 1));
 }
 
-static int set_memory_permission(void* address, size_t size, int prot) {
-    void* page_start = align_to_page(address);
-    size_t page_size = get_page_size();
-    size_t aligned_size = ((uintptr_t)address + size - (uintptr_t)page_start + page_size - 1) & ~(page_size - 1);
-    
-    if (mprotect(page_start, aligned_size, prot) != 0) {
-        DOBBY_LOG("mprotect failed for address %p", address);
+static int set_memory_permission(void* addr, size_t size, int prot) {
+    void* page = align_to_page(addr);
+    size_t len = ((uintptr_t)addr + size - (uintptr_t)page + get_page_size() - 1) & ~(get_page_size() - 1);
+    if (mprotect(page, len, prot) != 0) {
+        DOBBY_LOG("mprotect failed for %p", addr);
         return -1;
     }
     return 0;
 }
 
-static void flush_instruction_cache(void* address, size_t size) {
+static void flush_instruction_cache(void* addr, size_t size) {
 #if defined(__arm__) || defined(__aarch64__)
-    __clear_cache(address, (void*)((uintptr_t)address + size));
+    __clear_cache(addr, (void*)((uintptr_t)addr + size));
 #elif defined(__x86_64__) || defined(__i386__)
+    // x86 doesn't need explicit flush
 #else
-    __builtin___clear_cache((char*)address, (char*)address + size);
+    __builtin___clear_cache((char*)addr, (char*)addr + size);
 #endif
 }
 
 static DobbyHookEntry* find_hook_entry(void* target) {
-    DobbyHookEntry* entry = g_hook_list;
-    while (entry != NULL) {
-        if (entry->target == target) {
-            return entry;
-        }
-        entry = entry->next;
+    DobbyHookEntry* e = g_hook_list;
+    while (e) {
+        if (e->target == target) return e;
+        e = e->next;
     }
     return NULL;
 }
@@ -80,13 +70,11 @@ static void add_hook_entry(DobbyHookEntry* entry) {
 static void remove_hook_entry(void* target) {
     pthread_mutex_lock(&g_hook_lock);
     DobbyHookEntry** pp = &g_hook_list;
-    while (*pp != NULL) {
+    while (*pp) {
         if ((*pp)->target == target) {
             DobbyHookEntry* entry = *pp;
             *pp = entry->next;
-            if (entry->original_bytes != NULL) {
-                free(entry->original_bytes);
-            }
+            if (entry->original_bytes) free(entry->original_bytes);
             free(entry);
             break;
         }
@@ -99,295 +87,189 @@ static void remove_hook_entry(void* target) {
 typedef uint32_t arm64_insn_t;
 
 static int arm64_install_hook(void* target, void* replace, void** origin) {
-    if (target == NULL || replace == NULL) {
-        return DOBBY_ERROR_INVALID_TARGET;
-    }
-    
-    if (find_hook_entry(target) != NULL) {
-        return DOBBY_ERROR_ALREADY_HOOKED;
-    }
-    
-    if (set_memory_permission(target, 16, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
-        return DOBBY_ERROR_PERMISSION;
-    }
-    
-    arm64_insn_t* target_addr = (arm64_insn_t*)target;
-    uintptr_t target_ptr = (uintptr_t)target;
-    uintptr_t replace_ptr = (uintptr_t)replace;
-    
-    int64_t offset = (replace_ptr - target_ptr) >> 2;
-    bool is_near = (offset >= -0x03FFFFFF && offset <= 0x03FFFFFF);
-    
-    DobbyHookEntry* entry = (DobbyHookEntry*)calloc(1, sizeof(DobbyHookEntry));
-    if (entry == NULL) {
-        return DOBBY_ERROR_MEMORY_ALLOC;
-    }
+    if (!target || !replace) return DOBBY_ERROR_INVALID_TARGET;
+    if (find_hook_entry(target)) return DOBBY_ERROR_ALREADY_HOOKED;
+    if (set_memory_permission(target, 16, PROT_READ | PROT_WRITE | PROT_EXEC)) return DOBBY_ERROR_PERMISSION;
+
+    arm64_insn_t* addr = (arm64_insn_t*)target;
+    uintptr_t t = (uintptr_t)target, r = (uintptr_t)replace;
+
+    // allocate entry
+    DobbyHookEntry* entry = calloc(1, sizeof(DobbyHookEntry));
+    if (!entry) return DOBBY_ERROR_MEMORY_ALLOC;
     entry->target = target;
     entry->replace = replace;
-    entry->enabled = true;
-    
+    entry->enabled = 1;
     entry->original_size = 8;
-    entry->original_bytes = (uint8_t*)malloc(entry->original_size);
-    if (entry->original_bytes == NULL) {
-        free(entry);
-        return DOBBY_ERROR_MEMORY_ALLOC;
-    }
-    memcpy(entry->original_bytes, target_addr, entry->original_size);
-    
-    if (origin != NULL) {
-        size_t tramp_size = 32;
-        void* trampoline = DobbyAllocExecutableMemory(tramp_size);
-        if (trampoline == NULL) {
-            free(entry->original_bytes);
-            free(entry);
-            return DOBBY_ERROR_MEMORY_ALLOC;
+    entry->original_bytes = malloc(entry->original_size);
+    if (!entry->original_bytes) { free(entry); return DOBBY_ERROR_MEMORY_ALLOC; }
+    memcpy(entry->original_bytes, addr, entry->original_size);
+
+    // trampoline
+    if (origin) {
+        void* tramp = DobbyAllocExecutableMemory(32);
+        if (!tramp) { free(entry->original_bytes); free(entry); return DOBBY_ERROR_MEMORY_ALLOC; }
+        entry->origin = tramp;
+        arm64_insn_t* tr = (arm64_insn_t*)tramp;
+        tr[0] = ((arm64_insn_t*)entry->original_bytes)[0];
+        tr[1] = ((arm64_insn_t*)entry->original_bytes)[1];
+        uintptr_t ret = t + 8;
+        int64_t off = (ret - ((uintptr_t)tr + 12)) >> 2; // PC = tramp+8, 我们写在第3条指令，PC=tr+8? 实际B偏移相对PC=tr+8+4=tr+12，所以减12
+        if (off >= -0x03FFFFFF && off <= 0x03FFFFFF)
+            tr[2] = 0x14000000 | (0x03FFFFFF & off);
+        else {
+            // long jump: ADRP + ADD + BR
+            tr[2] = 0x90000000 | (((ret >> 12) & 0x1FFFFF) << 5);
+            tr[3] = 0x91BE0210 | ((ret & 0xFFF) << 10);
+            tr[4] = 0xD61F0200;
         }
-        entry->origin = trampoline;
-        
-        arm64_insn_t* tramp = (arm64_insn_t*)trampoline;
-        tramp[0] = ((arm64_insn_t*)entry->original_bytes)[0];
-        tramp[1] = ((arm64_insn_t*)entry->original_bytes)[1];
-        
-        uintptr_t return_addr = target_ptr + 8;
-        int64_t return_offset = (return_addr - ((uintptr_t)tramp + 8)) >> 2;
-        
-        if (return_offset >= -0x03FFFFFF && return_offset <= 0x03FFFFFF) {
-            tramp[2] = 0x14000000 | (0x03FFFFFF & return_offset);
-        } else {
-            tramp[2] = 0x90000000 | (((return_addr >> 12) & 0x1FFFFF) << 5);
-            tramp[3] = 0x91BE0210 | ((return_addr & 0xFFF) << 10);
-            tramp[4] = 0xD61F0200;
-        }
-        
-        flush_instruction_cache(tramp, tramp_size);
-        *origin = trampoline;
+        flush_instruction_cache(tramp, 32);
+        *origin = tramp;
     }
-    
-    if (is_near) {
-        target_addr[0] = 0x14000000 | (0x03FFFFFF & offset);
+
+    // write jump
+    int64_t off = (r - t - 4) >> 2; // PC = t + 4
+    if (off >= -0x03FFFFFF && off <= 0x03FFFFFF) {
+        addr[0] = 0x14000000 | (0x03FFFFFF & off);
     } else {
-        uintptr_t page_addr = replace_ptr & ~0xFFF;
-        uintptr_t target_page = target_ptr & ~0xFFF;
-        int64_t page_offset = (page_addr - target_page) >> 12;
-        
-        target_addr[0] = 0x90000000 | ((page_offset & 0x1FFFFF) << 5);
-        target_addr[1] = 0x91BE0210 | ((replace_ptr & 0xFFF) << 10);
-        target_addr[2] = 0xD61F0200;
+        // long jump: ADRP + ADD + BR
+        uintptr_t page = r & ~0xFFF;
+        int64_t page_off = (page - (t & ~0xFFF)) >> 12;
+        addr[0] = 0x90000000 | ((page_off & 0x1FFFFF) << 5);
+        addr[1] = 0x91BE0210 | ((r & 0xFFF) << 10);
+        addr[2] = 0xD61F0200;
     }
-    
     flush_instruction_cache(target, 16);
     add_hook_entry(entry);
     DOBBY_LOG("ARM64 hook installed at %p -> %p", target, replace);
-    
     return DOBBY_SUCCESS;
 }
 
 static int arm64_unhook(void* target) {
     DobbyHookEntry* entry = find_hook_entry(target);
-    if (entry == NULL) {
-        return DOBBY_ERROR_NOT_HOOKED;
-    }
-    
-    if (set_memory_permission(target, 16, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
+    if (!entry) return DOBBY_ERROR_NOT_HOOKED;
+    if (set_memory_permission(target, 16, PROT_READ | PROT_WRITE | PROT_EXEC))
         return DOBBY_ERROR_PERMISSION;
-    }
-    
     memcpy(target, entry->original_bytes, entry->original_size);
     flush_instruction_cache(target, entry->original_size);
-    
-    if (entry->origin != NULL) {
-        DobbyFreeExecutableMemory(entry->origin, 32);
-    }
-    
+    if (entry->origin) DobbyFreeExecutableMemory(entry->origin, 32);
     remove_hook_entry(target);
     DOBBY_LOG("ARM64 unhook at %p", target);
-    
     return DOBBY_SUCCESS;
 }
 
 #elif defined(__arm__)
 typedef uint32_t arm32_insn_t;
-
 static int arm32_install_hook(void* target, void* replace, void** origin) {
-    if (target == NULL || replace == NULL) {
-        return DOBBY_ERROR_INVALID_TARGET;
-    }
-    
-    if (find_hook_entry(target) != NULL) {
-        return DOBBY_ERROR_ALREADY_HOOKED;
-    }
-    
-    if (set_memory_permission(target, 8, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
-        return DOBBY_ERROR_PERMISSION;
-    }
-    
-    arm32_insn_t* target_addr = (arm32_insn_t*)target;
-    uintptr_t target_ptr = (uintptr_t)target;
-    uintptr_t replace_ptr = (uintptr_t)replace;
-    
-    DobbyHookEntry* entry = (DobbyHookEntry*)calloc(1, sizeof(DobbyHookEntry));
-    if (entry == NULL) {
-        return DOBBY_ERROR_MEMORY_ALLOC;
-    }
+    if (!target || !replace) return DOBBY_ERROR_INVALID_TARGET;
+    if (find_hook_entry(target)) return DOBBY_ERROR_ALREADY_HOOKED;
+    if (set_memory_permission(target, 8, PROT_READ | PROT_WRITE | PROT_EXEC)) return DOBBY_ERROR_PERMISSION;
+
+    arm32_insn_t* addr = (arm32_insn_t*)target;
+    uintptr_t t = (uintptr_t)target, r = (uintptr_t)replace;
+
+    DobbyHookEntry* entry = calloc(1, sizeof(DobbyHookEntry));
+    if (!entry) return DOBBY_ERROR_MEMORY_ALLOC;
     entry->target = target;
     entry->replace = replace;
-    entry->enabled = true;
-    
+    entry->enabled = 1;
     entry->original_size = 8;
-    entry->original_bytes = (uint8_t*)malloc(entry->original_size);
-    if (entry->original_bytes == NULL) {
-        free(entry);
-        return DOBBY_ERROR_MEMORY_ALLOC;
+    entry->original_bytes = malloc(entry->original_size);
+    if (!entry->original_bytes) { free(entry); return DOBBY_ERROR_MEMORY_ALLOC; }
+    memcpy(entry->original_bytes, addr, entry->original_size);
+
+    if (origin) {
+        void* tramp = DobbyAllocExecutableMemory(24);
+        if (!tramp) { free(entry->original_bytes); free(entry); return DOBBY_ERROR_MEMORY_ALLOC; }
+        entry->origin = tramp;
+        arm32_insn_t* tr = (arm32_insn_t*)tramp;
+        tr[0] = ((arm32_insn_t*)entry->original_bytes)[0];
+        tr[1] = ((arm32_insn_t*)entry->original_bytes)[1];
+        tr[2] = 0xE51FF004; // LDR PC, [PC, #-4]
+        tr[3] = (arm32_insn_t)(t + 8);
+        flush_instruction_cache(tramp, 24);
+        *origin = tramp;
     }
-    memcpy(entry->original_bytes, target_addr, entry->original_size);
-    
-    if (origin != NULL) {
-        size_t tramp_size = 24;
-        void* trampoline = DobbyAllocExecutableMemory(tramp_size);
-        if (trampoline == NULL) {
-            free(entry->original_bytes);
-            free(entry);
-            return DOBBY_ERROR_MEMORY_ALLOC;
-        }
-        entry->origin = trampoline;
-        
-        arm32_insn_t* tramp = (arm32_insn_t*)trampoline;
-        tramp[0] = ((arm32_insn_t*)entry->original_bytes)[0];
-        tramp[1] = ((arm32_insn_t*)entry->original_bytes)[1];
-        tramp[2] = 0xE51FF004;
-        tramp[3] = (arm32_insn_t)(target_ptr + 8);
-        
-        flush_instruction_cache(tramp, tramp_size);
-        *origin = trampoline;
-    }
-    
-    int32_t offset = (replace_ptr - target_ptr - 8) >> 2;
-    target_addr[0] = 0xEA000000 | (0x00FFFFFF & offset);
-    
+
+    int32_t off = (r - t - 8) >> 2;
+    addr[0] = 0xEA000000 | (0x00FFFFFF & off);
     flush_instruction_cache(target, 8);
     add_hook_entry(entry);
     DOBBY_LOG("ARM32 hook installed at %p -> %p", target, replace);
-    
     return DOBBY_SUCCESS;
 }
 
 static int arm32_unhook(void* target) {
     DobbyHookEntry* entry = find_hook_entry(target);
-    if (entry == NULL) {
-        return DOBBY_ERROR_NOT_HOOKED;
-    }
-    
-    if (set_memory_permission(target, 8, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
+    if (!entry) return DOBBY_ERROR_NOT_HOOKED;
+    if (set_memory_permission(target, 8, PROT_READ | PROT_WRITE | PROT_EXEC))
         return DOBBY_ERROR_PERMISSION;
-    }
-    
     memcpy(target, entry->original_bytes, entry->original_size);
     flush_instruction_cache(target, entry->original_size);
-    
-    if (entry->origin != NULL) {
-        DobbyFreeExecutableMemory(entry->origin, 24);
-    }
-    
+    if (entry->origin) DobbyFreeExecutableMemory(entry->origin, 24);
     remove_hook_entry(target);
     DOBBY_LOG("ARM32 unhook at %p", target);
-    
     return DOBBY_SUCCESS;
 }
 
 #elif defined(__x86_64__) || defined(__i386__)
 static int x86_install_hook(void* target, void* replace, void** origin) {
-    if (target == NULL || replace == NULL) {
-        return DOBBY_ERROR_INVALID_TARGET;
-    }
-    
-    if (find_hook_entry(target) != NULL) {
-        return DOBBY_ERROR_ALREADY_HOOKED;
-    }
-    
-    if (set_memory_permission(target, 16, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
-        return DOBBY_ERROR_PERMISSION;
-    }
-    
-    uint8_t* target_addr = (uint8_t*)target;
-    uintptr_t target_ptr = (uintptr_t)target;
-    uintptr_t replace_ptr = (uintptr_t)replace;
-    
-    DobbyHookEntry* entry = (DobbyHookEntry*)calloc(1, sizeof(DobbyHookEntry));
-    if (entry == NULL) {
-        return DOBBY_ERROR_MEMORY_ALLOC;
-    }
+    if (!target || !replace) return DOBBY_ERROR_INVALID_TARGET;
+    if (find_hook_entry(target)) return DOBBY_ERROR_ALREADY_HOOKED;
+    if (set_memory_permission(target, 16, PROT_READ | PROT_WRITE | PROT_EXEC)) return DOBBY_ERROR_PERMISSION;
+
+    uint8_t* addr = (uint8_t*)target;
+    uintptr_t t = (uintptr_t)target, r = (uintptr_t)replace;
+
+    DobbyHookEntry* entry = calloc(1, sizeof(DobbyHookEntry));
+    if (!entry) return DOBBY_ERROR_MEMORY_ALLOC;
     entry->target = target;
     entry->replace = replace;
-    entry->enabled = true;
-    
+    entry->enabled = 1;
     entry->original_size = 5;
-    entry->original_bytes = (uint8_t*)malloc(entry->original_size);
-    if (entry->original_bytes == NULL) {
-        free(entry);
-        return DOBBY_ERROR_MEMORY_ALLOC;
+    entry->original_bytes = malloc(entry->original_size);
+    if (!entry->original_bytes) { free(entry); return DOBBY_ERROR_MEMORY_ALLOC; }
+    memcpy(entry->original_bytes, addr, entry->original_size);
+
+    if (origin) {
+        void* tramp = DobbyAllocExecutableMemory(32);
+        if (!tramp) { free(entry->original_bytes); free(entry); return DOBBY_ERROR_MEMORY_ALLOC; }
+        entry->origin = tramp;
+        uint8_t* tr = (uint8_t*)tramp;
+        memcpy(tr, addr, 5);
+        tr[5] = 0xE9;
+        int32_t off = (t + 5) - ((uintptr_t)tr + 10);
+        memcpy(&tr[6], &off, 4);
+        flush_instruction_cache(tramp, 32);
+        *origin = tramp;
     }
-    memcpy(entry->original_bytes, target_addr, entry->original_size);
-    
-    if (origin != NULL) {
-        size_t tramp_size = 32;
-        void* trampoline = DobbyAllocExecutableMemory(tramp_size);
-        if (trampoline == NULL) {
-            free(entry->original_bytes);
-            free(entry);
-            return DOBBY_ERROR_MEMORY_ALLOC;
-        }
-        entry->origin = trampoline;
-        
-        uint8_t* tramp = (uint8_t*)trampoline;
-        memcpy(tramp, target_addr, 5);
-        tramp[5] = 0xE9;
-        int32_t offset = (target_ptr + 5) - ((uintptr_t)tramp + 10);
-        memcpy(&tramp[6], &offset, 4);
-        
-        flush_instruction_cache(tramp, tramp_size);
-        *origin = trampoline;
-    }
-    
-    target_addr[0] = 0xE9;
-    int32_t offset = (replace_ptr - target_ptr) - 5;
-    memcpy(&target_addr[1], &offset, 4);
-    
+
+    addr[0] = 0xE9;
+    int32_t off = (r - t) - 5;
+    memcpy(&addr[1], &off, 4);
     flush_instruction_cache(target, 16);
     add_hook_entry(entry);
     DOBBY_LOG("x86 hook installed at %p -> %p", target, replace);
-    
     return DOBBY_SUCCESS;
 }
 
 static int x86_unhook(void* target) {
     DobbyHookEntry* entry = find_hook_entry(target);
-    if (entry == NULL) {
-        return DOBBY_ERROR_NOT_HOOKED;
-    }
-    
-    if (set_memory_permission(target, 16, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
+    if (!entry) return DOBBY_ERROR_NOT_HOOKED;
+    if (set_memory_permission(target, 16, PROT_READ | PROT_WRITE | PROT_EXEC))
         return DOBBY_ERROR_PERMISSION;
-    }
-    
     memcpy(target, entry->original_bytes, entry->original_size);
     flush_instruction_cache(target, entry->original_size);
-    
-    if (entry->origin != NULL) {
-        DobbyFreeExecutableMemory(entry->origin, 32);
-    }
-    
+    if (entry->origin) DobbyFreeExecutableMemory(entry->origin, 32);
     remove_hook_entry(target);
     DOBBY_LOG("x86 unhook at %p", target);
-    
     return DOBBY_SUCCESS;
 }
-
 #else
 static int unsupported_install_hook(void* target, void* replace, void** origin) {
     DOBBY_LOG("Unsupported architecture");
     return DOBBY_ERROR_UNSUPPORTED_ARCH;
 }
-
 static int unsupported_unhook(void* target) {
     DOBBY_LOG("Unsupported architecture");
     return DOBBY_ERROR_UNSUPPORTED_ARCH;
@@ -395,20 +277,10 @@ static int unsupported_unhook(void* target) {
 #endif
 
 int DobbyHook(void* target, void* replace, void** origin) {
-    DOBBY_LOG("DobbyHook: target=%p, replace=%p", target, replace);
-    
-    if (target == NULL) {
-        return DOBBY_ERROR_INVALID_TARGET;
-    }
-    if (replace == NULL) {
-        return DOBBY_ERROR_INVALID_REPLACE;
-    }
-    
-    if (DobbyIsHooked(target)) {
-        DOBBY_LOG("Target %p already hooked", target);
-        return DOBBY_ERROR_ALREADY_HOOKED;
-    }
-    
+    DOBBY_LOG("DobbyHook: %p -> %p", target, replace);
+    if (!target) return DOBBY_ERROR_INVALID_TARGET;
+    if (!replace) return DOBBY_ERROR_INVALID_REPLACE;
+    if (DobbyIsHooked(target)) return DOBBY_ERROR_ALREADY_HOOKED;
 #if defined(__aarch64__)
     return arm64_install_hook(target, replace, origin);
 #elif defined(__arm__)
@@ -421,12 +293,8 @@ int DobbyHook(void* target, void* replace, void** origin) {
 }
 
 int DobbyUnhook(void* target) {
-    DOBBY_LOG("DobbyUnhook: target=%p", target);
-    
-    if (target == NULL) {
-        return DOBBY_ERROR_INVALID_TARGET;
-    }
-    
+    DOBBY_LOG("DobbyUnhook: %p", target);
+    if (!target) return DOBBY_ERROR_INVALID_TARGET;
 #if defined(__aarch64__)
     return arm64_unhook(target);
 #elif defined(__arm__)
@@ -440,114 +308,83 @@ int DobbyUnhook(void* target) {
 
 int DobbyDisableHook(void* target) {
     DobbyHookEntry* entry = find_hook_entry(target);
-    if (entry == NULL) {
-        return DOBBY_ERROR_NOT_HOOKED;
-    }
-    
-    if (!entry->enabled) {
-        return DOBBY_SUCCESS;
-    }
-    
-    if (set_memory_permission(target, 16, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
+    if (!entry) return DOBBY_ERROR_NOT_HOOKED;
+    if (!entry->enabled) return DOBBY_SUCCESS;
+    if (set_memory_permission(target, 16, PROT_READ | PROT_WRITE | PROT_EXEC))
         return DOBBY_ERROR_PERMISSION;
-    }
     memcpy(target, entry->original_bytes, entry->original_size);
     flush_instruction_cache(target, entry->original_size);
-    
-    entry->enabled = false;
+    entry->enabled = 0;
     DOBBY_LOG("Hook disabled at %p", target);
-    
     return DOBBY_SUCCESS;
 }
 
 int DobbyEnableHook(void* target) {
     DobbyHookEntry* entry = find_hook_entry(target);
-    if (entry == NULL) {
-        return DOBBY_ERROR_NOT_HOOKED;
-    }
-    
-    if (entry->enabled) {
-        return DOBBY_SUCCESS;
-    }
-    
-    if (set_memory_permission(target, 16, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
+    if (!entry) return DOBBY_ERROR_NOT_HOOKED;
+    if (entry->enabled) return DOBBY_SUCCESS;
+    if (set_memory_permission(target, 16, PROT_READ | PROT_WRITE | PROT_EXEC))
         return DOBBY_ERROR_PERMISSION;
-    }
-    
+
+    // re-install the jump using same logic as install
+    void* replace = entry->replace;
 #if defined(__aarch64__)
-    uint32_t* target_addr = (uint32_t*)target;
-    uintptr_t target_ptr = (uintptr_t)target;
-    uintptr_t replace_ptr = (uintptr_t)entry->replace;
-    int64_t offset = (replace_ptr - target_ptr) >> 2;
-    if (offset >= -0x03FFFFFF && offset <= 0x03FFFFFF) {
-        target_addr[0] = 0x14000000 | (0x03FFFFFF & offset);
+    uint32_t* addr = (uint32_t*)target;
+    uintptr_t t = (uintptr_t)target, r = (uintptr_t)replace;
+    int64_t off = (r - t - 4) >> 2;
+    if (off >= -0x03FFFFFF && off <= 0x03FFFFFF) {
+        addr[0] = 0x14000000 | (0x03FFFFFF & off);
+    } else {
+        uintptr_t page = r & ~0xFFF;
+        int64_t page_off = (page - (t & ~0xFFF)) >> 12;
+        addr[0] = 0x90000000 | ((page_off & 0x1FFFFF) << 5);
+        addr[1] = 0x91BE0210 | ((r & 0xFFF) << 10);
+        addr[2] = 0xD61F0200;
     }
 #elif defined(__arm__)
-    uint32_t* target_addr = (uint32_t*)target;
-    uintptr_t target_ptr = (uintptr_t)target;
-    uintptr_t replace_ptr = (uintptr_t)entry->replace;
-    int32_t offset = (replace_ptr - target_ptr - 8) >> 2;
-    target_addr[0] = 0xEA000000 | (0x00FFFFFF & offset);
+    uint32_t* addr = (uint32_t*)target;
+    uintptr_t t = (uintptr_t)target, r = (uintptr_t)replace;
+    int32_t off = (r - t - 8) >> 2;
+    addr[0] = 0xEA000000 | (0x00FFFFFF & off);
 #elif defined(__x86_64__) || defined(__i386__)
-    uint8_t* target_addr = (uint8_t*)target;
-    uintptr_t target_ptr = (uintptr_t)target;
-    uintptr_t replace_ptr = (uintptr_t)entry->replace;
-    target_addr[0] = 0xE9;
-    int32_t offset = (replace_ptr - target_ptr) - 5;
-    memcpy(&target_addr[1], &offset, 4);
+    uint8_t* addr = (uint8_t*)target;
+    uintptr_t t = (uintptr_t)target, r = (uintptr_t)replace;
+    addr[0] = 0xE9;
+    int32_t off = (r - t) - 5;
+    memcpy(&addr[1], &off, 4);
 #endif
-    
     flush_instruction_cache(target, 16);
-    entry->enabled = true;
+    entry->enabled = 1;
     DOBBY_LOG("Hook enabled at %p", target);
-    
     return DOBBY_SUCCESS;
 }
 
 void* DobbyCopyCode(void* address, size_t size) {
-    if (address == NULL || size == 0) {
-        return NULL;
-    }
-    
+    if (!address || !size) return NULL;
     void* new_addr = DobbyAllocExecutableMemory(size);
-    if (new_addr == NULL) {
-        return NULL;
-    }
-    
+    if (!new_addr) return NULL;
     memcpy(new_addr, address, size);
     flush_instruction_cache(new_addr, size);
-    
     return new_addr;
 }
 
 void* DobbyAllocExecutableMemory(size_t size) {
     void* addr = mmap(NULL, size, PROT_READ | PROT_WRITE | PROT_EXEC,
                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (addr == MAP_FAILED) {
-        DOBBY_LOG("mmap failed for size %zu", size);
-        return NULL;
-    }
-    return addr;
+    return (addr == MAP_FAILED) ? NULL : addr;
 }
 
 void DobbyFreeExecutableMemory(void* address, size_t size) {
-    if (address != NULL && size > 0) {
-        munmap(address, size);
-    }
+    if (address && size) munmap(address, size);
 }
 
 int DobbyResetHook(void* target) {
-    int result = DobbyUnhook(target);
-    if (result != DOBBY_SUCCESS) {
-        return result;
-    }
-    
     DobbyHookEntry* entry = find_hook_entry(target);
-    if (entry == NULL) {
-        return DOBBY_ERROR_NOT_HOOKED;
-    }
-    
-    return DobbyHook(target, entry->replace, NULL);
+    if (!entry) return DOBBY_ERROR_NOT_HOOKED;
+    void* replace = entry->replace;
+    int ret = DobbyUnhook(target);
+    if (ret != DOBBY_SUCCESS) return ret;
+    return DobbyHook(target, replace, NULL);
 }
 
 bool DobbyIsHooked(void* target) {
@@ -555,46 +392,24 @@ bool DobbyIsHooked(void* target) {
 }
 
 int DobbyGetHookInfo(void* target, void** replace, void** origin) {
-    DobbyHookEntry* entry = find_hook_entry(target);
-    if (entry == NULL) {
-        return DOBBY_ERROR_NOT_HOOKED;
-    }
-    
-    if (replace != NULL) {
-        *replace = entry->replace;
-    }
-    if (origin != NULL) {
-        *origin = entry->origin;
-    }
-    
+    DobbyHookEntry* e = find_hook_entry(target);
+    if (!e) return DOBBY_ERROR_NOT_HOOKED;
+    if (replace) *replace = e->replace;
+    if (origin) *origin = e->origin;
     return DOBBY_SUCCESS;
 }
 
-void DobbySetLogCallback(DobbyLogCallback callback) {
-    g_log_callback = callback;
-}
+void DobbySetLogCallback(DobbyLogCallback cb) { g_log_callback = cb; }
+DobbyHookEntry* DobbyGetHookList(void) { return g_hook_list; }
 
-DobbyHookEntry* DobbyGetHookList(void) {
-    return g_hook_list;
-}
-
-__attribute__((constructor))
-static void dobby_init(void) {
-    DOBBY_LOG("Dobby Hook initialized");
-}
-
-__attribute__((destructor))
-static void dobby_fini(void) {
+__attribute__((constructor)) static void init() { DOBBY_LOG("Dobby Hook initialized"); }
+__attribute__((destructor)) static void fini() {
     DOBBY_LOG("Dobby Hook shutting down");
-    while (g_hook_list != NULL) {
-        DobbyHookEntry* entry = g_hook_list;
-        g_hook_list = entry->next;
-        if (entry->original_bytes != NULL) {
-            free(entry->original_bytes);
-        }
-        if (entry->origin != NULL) {
-            DobbyFreeExecutableMemory(entry->origin, 32);
-        }
-        free(entry);
+    while (g_hook_list) {
+        DobbyHookEntry* e = g_hook_list;
+        g_hook_list = e->next;
+        if (e->original_bytes) free(e->original_bytes);
+        if (e->origin) DobbyFreeExecutableMemory(e->origin, 32);
+        free(e);
     }
 }
