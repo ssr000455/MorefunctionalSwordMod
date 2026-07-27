@@ -28,11 +28,11 @@ jobs:
         with:
           gradle-version: 8.7
 
-      - name: Build Native with Gradle
-        run: ./gradlew :native:buildNative
+      - name: Build Native Library
+        run: gradle :native:buildNative
 
       - name: Build Mod JAR
-        run: ./gradlew build
+        run: gradle build
 
       - name: Rename artifact
         run: |
