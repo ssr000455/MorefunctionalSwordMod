@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
+#include <signal.h>
 
 #define LOGI(...) printf("[mfswordmod] " __VA_ARGS__)
 #define LOGE(...) printf("[mfswordmod] " __VA_ARGS__)
@@ -42,7 +43,7 @@ static SendPacketFunc original_sendPacket = NULL;
 static JNIEnv* get_env() {
     JNIEnv* env = NULL;
     if (g_jvm != NULL) {
-        (*g_jvm)->AttachCurrentThread(g_jvm, (void**)&env, NULL);
+        (*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL);
     }
     return env;
 }
