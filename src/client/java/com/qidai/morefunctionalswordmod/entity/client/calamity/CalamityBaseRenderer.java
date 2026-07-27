@@ -2,6 +2,7 @@ package com.qidai.morefunctionalswordmod.entity.client.calamity;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.render.OverlayTexture;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRendererFactory;
 import net.minecraft.client.render.entity.MobEntityRenderer;
@@ -14,10 +15,6 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.util.Identifier;
 
-/**
- * 基础灾厄生物渲染器
- * 手动渲染模型，避免类型转换崩溃
- */
 public class CalamityBaseRenderer extends MobEntityRenderer<HostileEntity, EntityModel<HostileEntity>> {
     private final Identifier texture;
     private final float scaleX, scaleY, scaleZ;
@@ -41,16 +38,16 @@ public class CalamityBaseRenderer extends MobEntityRenderer<HostileEntity, Entit
     @Override
     public void render(HostileEntity entity, float yaw, float tickDelta, MatrixStack matrices,
                        VertexConsumerProvider vertexConsumers, int light) {
-        // 手动渲染，不调用 super.render，避免类型转换问题
         matrices.push();
         matrices.scale(scaleX, scaleY, scaleZ);
         RenderSystem.setShaderColor(color[0], color[1], color[2], color.length > 3 ? color[3] : 1.0f);
 
-        // 设置模型角度
         model.setAngles(entity, entity.limbAnimator.getPos(), entity.limbAnimator.getSpeed(),
                 entity.age, entity.headYaw, entity.getPitch());
-        // 渲染模型
-        model.render(matrices, vertexConsumers, light, OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f);
+
+        // 修复：从 vertexConsumers 获取 VertexConsumer
+        model.render(matrices, vertexConsumers.getBuffer(RenderLayer.getEntityCutout(texture)),
+                light, OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f);
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
         matrices.pop();
