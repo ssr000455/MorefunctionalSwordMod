@@ -34,9 +34,14 @@ tasks.register("buildNative") {
                 "-I${ndkHome}/toolchains/llvm/prebuilt/linux-x86_64/lib64/clang/17/include",
                 "-I${javaHome}/include",
                 "-I${javaHome}/include/linux",
-                "${srcDir}/mfswordmod_native.c",
+                "${srcDir}/mfswordmod_native_core.c",
+                "${srcDir}/mfswordmod_native_hook.c",
                 "${srcDir}/dobby.c",
                 "-o",
+                "${srcDir}/mfswordmod_native_core.c",
+                "${srcDir}/mfswordmod_native_hooks.c",
+                "${srcDir}/mfswordmod_native_config.c",
+                "${srcDir}/mfswordmod_native_tcp.c",
                 "${targetDir}/libmfswordmod-arm64.so",
                 "-ldl"
         }
