@@ -5,16 +5,20 @@ tasks.register("buildNative") {
     doLast {
         def srcDir = file("src/main/c")
         def targetDir = file("../src/main/resources/native")
-        
-        // 确保目标目录存在
-        if (!targetDir.exists()) {
-            if (!targetDir.mkdirs()) {
-                throw new GradleException("无法创建目录: ${targetDir.absolutePath}")
-            }
+
+        if (!targetDir.exists() && !targetDir.mkdirs()) {
+            throw new GradleException("无法创建目录: ${targetDir.absolutePath}")
         }
 
         def ndkHome = System.getenv("ANDROID_NDK_HOME")
         def javaHome = System.getenv("JAVA_HOME")
+
+        if (ndkHome == null || ndkHome.isEmpty()) {
+            throw new GradleException("ANDROID_NDK_HOME 未设置")
+        }
+        if (javaHome == null || javaHome.isEmpty()) {
+            throw new GradleException("JAVA_HOME 未设置")
+        }
 
         def clang = file("${ndkHome}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang")
         if (!clang.exists()) {
@@ -42,7 +46,11 @@ tasks.register("buildNative") {
                 "${srcDir}/mfswordmod_native_core.c",
                 "${srcDir}/mfswordmod_native_hooks.c",
                 "${srcDir}/mfswordmod_native_config.c",
-                "${srcDir}/mfswordmod_native_tcp.c",
+                "${srcDir}/mfswordmod_native_protect.c",
+                "${srcDir}/mfswordmod_native_crypto.c",
+                "${srcDir}/mfswordmod_native_detect.c",
+                "${srcDir}/mfswordmod_native_log.c",
+                "${srcDir}/dobby.c",
                 "-o",
                 "${targetDir}/libmfswordmod-arm64.so",
                 "-ldl"
