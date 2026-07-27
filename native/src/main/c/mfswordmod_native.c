@@ -9,7 +9,6 @@
 //       - 反作弊绕过 (Hook网络包发送)
 // ================================================================
 
-#define _GNU_SOURCE
 #include <jni.h>
 #include <string.h>
 #include <stdbool.h>
@@ -17,7 +16,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
-#include <signal.h>
 
 #define LOGI(...) printf("[mfswordmod] " __VA_ARGS__)
 #define LOGE(...) printf("[mfswordmod] " __VA_ARGS__)

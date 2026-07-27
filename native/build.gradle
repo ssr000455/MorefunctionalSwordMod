@@ -15,6 +15,8 @@ tasks.register("buildNative") {
             clang = file("${ndkHome}/bin/clang")
         }
 
+        def sysroot = "${ndkHome}/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
+
         exec {
             commandLine clang.absolutePath,
                 "-O2",
@@ -22,9 +24,10 @@ tasks.register("buildNative") {
                 "-shared",
                 "-D__ANDROID__",
                 "-D__ANDROID_API__=24",
-                "-D_GNU_SOURCE",
                 "-I${srcDir}",
-                "-I${ndkHome}/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include",
+                "-I${sysroot}/usr/include",
+                "-I${sysroot}/usr/include/aarch64-linux-android",
+                "-I${ndkHome}/toolchains/llvm/prebuilt/linux-x86_64/lib64/clang/17/include",
                 "-I${javaHome}/include",
                 "-I${javaHome}/include/linux",
                 "${srcDir}/mfswordmod_native.c",
@@ -34,7 +37,7 @@ tasks.register("buildNative") {
                 "-ldl"
         }
 
-        println " .so 已生成: ${targetDir}/libmfswordmod-arm64.so"
+        println "✅ .so 已生成: ${targetDir}/libmfswordmod-arm64.so"
     }
 }
 

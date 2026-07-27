@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include "dobby.h"
 #include <stdarg.h>
 #include <stdio.h>
@@ -7,7 +6,6 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <pthread.h>
-#include <signal.h>
 
 static DobbyHookEntry* g_hook_list = NULL;
 static pthread_mutex_t g_hook_lock = PTHREAD_MUTEX_INITIALIZER;
