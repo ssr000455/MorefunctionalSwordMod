@@ -15,7 +15,6 @@ public class NativeLoader {
     private static boolean loaded = false;
 
     private static native void setGameDir(String gameDir);
-
     private static native void installNativeHook(
         long addr_getHardness,
         long addr_damage,
@@ -35,20 +34,7 @@ public class NativeLoader {
         long addr_jump,
         long addr_renderFog,
         long addr_renderItem,
-        long addr_chatMessageC2SPacket,
-        long addr_removeStack,
-        long addr_setStack,
-        long addr_dropInventory,
-        long addr_dropSelectedItem,
-        long addr_dropItem,
-        long addr_onDeath,
-        long addr_kill,
-        long addr_clearInventory,
-        long addr_setHealth,
-        long addr_removeStack2,
-        long addr_quickMove,
-        long addr_clickSlot,
-        long addr_syncInventory
+        long addr_chatMessageC2SPacket
     );
 
     public static void load() {
@@ -99,9 +85,13 @@ public class NativeLoader {
             System.load(soFile.getAbsolutePath());
             LOGGER.info("so加载成功: {}", soFile.getAbsolutePath());
 
-            String gameDir = FabricLoader.getInstance().getGameDir().toString();
-            setGameDir(gameDir);
-            LOGGER.info("游戏目录已设置: {}", gameDir);
+            // 尝试设置游戏目录，如果Native没有导出这个函数就跳过
+            try {
+                setGameDir(FabricLoader.getInstance().getGameDir().toString());
+                LOGGER.info("游戏目录已设置");
+            } catch (UnsatisfiedLinkError e) {
+                LOGGER.warn("setGameDir 未实现，配置文件和日志将使用默认路径");
+            }
 
             long addr_getHardness = getMethodAddress(
                 "net.minecraft.class_2248",
@@ -217,84 +207,6 @@ public class NativeLoader {
                 "(Ljava/lang/String;)V"
             );
 
-            long addr_removeStack = getMethodAddress(
-                "net.minecraft.class_1721",
-                "method_7368",
-                "(I)V"
-            );
-
-            long addr_setStack = getMethodAddress(
-                "net.minecraft.class_1721",
-                "method_7358",
-                "(ILnet/minecraft/class_1799;)V"
-            );
-
-            long addr_dropInventory = getMethodAddress(
-                "net.minecraft.class_3222",
-                "method_5992",
-                "()V"
-            );
-
-            long addr_dropSelectedItem = getMethodAddress(
-                "net.minecraft.class_3222",
-                "method_5978",
-                "()V"
-            );
-
-            long addr_dropItem = getMethodAddress(
-                "net.minecraft.class_3222",
-                "method_5990",
-                "(Lnet/minecraft/class_1799;Z)Lnet/minecraft/class_2477;"
-            );
-
-            long addr_onDeath = getMethodAddress(
-                "net.minecraft.class_1309",
-                "method_5574",
-                "(Lnet/minecraft/class_1282;)V"
-            );
-
-            long addr_kill = getMethodAddress(
-                "net.minecraft.class_1297",
-                "method_5731",
-                "()V"
-            );
-
-            long addr_clearInventory = getMethodAddress(
-                "net.minecraft.class_3222",
-                "method_5988",
-                "()V"
-            );
-
-            long addr_setHealth = getMethodAddress(
-                "net.minecraft.class_1309",
-                "method_6044",
-                "(F)V"
-            );
-
-            long addr_removeStack2 = getMethodAddress(
-                "net.minecraft.class_1721",
-                "method_7367",
-                "(I)Lnet/minecraft/class_1799;"
-            );
-
-            long addr_quickMove = getMethodAddress(
-                "net.minecraft.class_1703",
-                "method_7823",
-                "(II)Lnet/minecraft/class_1799;"
-            );
-
-            long addr_clickSlot = getMethodAddress(
-                "net.minecraft.class_1703",
-                "method_7818",
-                "(IILnet/minecraft/class_1799;I)V"
-            );
-
-            long addr_syncInventory = getMethodAddress(
-                "net.minecraft.class_3222",
-                "method_5740",
-                "()V"
-            );
-
             installNativeHook(
                 addr_getHardness,
                 addr_damage,
@@ -314,20 +226,7 @@ public class NativeLoader {
                 addr_jump,
                 addr_renderFog,
                 addr_renderItem,
-                addr_chatMessageC2SPacket,
-                addr_removeStack,
-                addr_setStack,
-                addr_dropInventory,
-                addr_dropSelectedItem,
-                addr_dropItem,
-                addr_onDeath,
-                addr_kill,
-                addr_clearInventory,
-                addr_setHealth,
-                addr_removeStack2,
-                addr_quickMove,
-                addr_clickSlot,
-                addr_syncInventory
+                addr_chatMessageC2SPacket
             );
 
             loaded = true;

@@ -45,15 +45,12 @@ public class CalamityBaseRenderer extends MobEntityRenderer<HostileEntity, Entit
         model.setAngles(entity, entity.limbAnimator.getPos(), entity.limbAnimator.getSpeed(),
                 entity.age, entity.headYaw, entity.getPitch());
 
-        // 修复：从 vertexConsumers 获取 VertexConsumer
         model.render(matrices, vertexConsumers.getBuffer(RenderLayer.getEntityCutout(texture)),
                 light, OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f);
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
         matrices.pop();
     }
-
-    // ---- 工厂方法 ----
 
     public static CalamityBaseRenderer createSoldier(EntityRendererFactory.Context ctx) {
         return new CalamityBaseRenderer(ctx,

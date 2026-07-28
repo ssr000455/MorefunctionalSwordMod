@@ -174,3 +174,11 @@ void setEntityHealth(JNIEnv* env, jobject entity, float health) {
         (*env)->CallVoidMethod(env, entity, setHealth, health);
     }
 }
+
+JNIEXPORT void JNICALL Java_com_qidai_morefunctionalswordmod_NativeLoader_setGameDir(JNIEnv* env, jobject obj, jstring dir) {
+    const char* d = (*env)->GetStringUTFChars(env, dir, NULL);
+    if (d) {
+        set_game_dir(d);
+        (*env)->ReleaseStringUTFChars(env, dir, d);
+    }
+}
