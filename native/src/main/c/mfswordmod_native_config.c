@@ -106,7 +106,7 @@ const char* get_game_dir() {
     return g_game_dir;
 }
 
-static const char* get_config_dir() {
+const char* get_config_dir() {
     if (g_config_dir[0] != 0) return g_config_dir;
     const char* gameDir = get_game_dir();
     const char* versionDir = getenv("MINECRAFT_VERSION");

@@ -44,6 +44,7 @@ extern ModConfig g_config;
 
 void set_game_dir(const char* dir);
 const char* get_game_dir();
+const char* get_config_dir();
 const char* get_config_path();
 const char* get_log_path();
 const char* get_alert_path();

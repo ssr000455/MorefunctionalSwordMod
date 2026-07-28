@@ -58,10 +58,10 @@ void init_log() {
         return;
     }
 
-    const char* log_path = get_log_path();
     const char* dir = get_config_dir();
     mkdir_recursive_log(dir);
 
+    const char* log_path = get_log_path();
     g_log_file = fopen(log_path, "a");
     if (g_log_file == NULL) {
         printf("[mfswordmod] 无法打开日志文件: %s (errno=%d)\n", log_path, errno);
