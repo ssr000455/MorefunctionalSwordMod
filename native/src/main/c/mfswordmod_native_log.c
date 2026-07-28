@@ -13,23 +13,18 @@
 #define LOGE(...) printf("[mfswordmod] " __VA_ARGS__)
 #define LOGW(...) printf("[mfswordmod] " __VA_ARGS__)
 
-// 前置声明，解决 init_log 调用 log_write 时未声明的问题
 void log_write(const char* format, ...);
 
 static FILE* g_log_file = NULL;
 static FILE* g_alert_file = NULL;
 static bool g_log_initialized = false;
 static pthread_mutex_t g_log_lock = PTHREAD_MUTEX_INITIALIZER;
-static char g_log_path[512] = {0};
-static char g_alert_path[512] = {0};
 static int g_log_level = 0;
 
 #define LOG_LEVEL_INFO  0
 #define LOG_LEVEL_WARN  1
 #define LOG_LEVEL_ERROR 2
 #define LOG_LEVEL_DEBUG 3
-
-extern const char* get_config_dir();
 
 static void mkdir_recursive_log(const char* path) {
     if (path == NULL || path[0] == 0) return;
@@ -52,20 +47,6 @@ static void get_time_str(char* buffer, int size) {
     strftime(buffer, size, "%Y-%m-%d %H:%M:%S", tm_info);
 }
 
-const char* get_log_path() {
-    if (g_log_path[0] != 0) return g_log_path;
-    const char* dir = get_config_dir();
-    snprintf(g_log_path, sizeof(g_log_path), "%s/mfswordmod.log", dir);
-    return g_log_path;
-}
-
-const char* get_alert_path() {
-    if (g_alert_path[0] != 0) return g_alert_path;
-    const char* dir = get_config_dir();
-    snprintf(g_alert_path, sizeof(g_alert_path), "%s/mfswordmod_alerts.log", dir);
-    return g_alert_path;
-}
-
 void init_log() {
     if (g_log_initialized) return;
 
@@ -77,10 +58,10 @@ void init_log() {
         return;
     }
 
+    const char* log_path = get_log_path();
     const char* dir = get_config_dir();
     mkdir_recursive_log(dir);
 
-    const char* log_path = get_log_path();
     g_log_file = fopen(log_path, "a");
     if (g_log_file == NULL) {
         printf("[mfswordmod] 无法打开日志文件: %s (errno=%d)\n", log_path, errno);
